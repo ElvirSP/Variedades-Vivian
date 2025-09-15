@@ -1,0 +1,38 @@
+{
+  "name": "tienda-variedades-frontend",
+  "version": "1.0.0",
+  "description": "Frontend web para tienda de variedades",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.87.4",
+    "axios": "^1.3.0",
+    "clsx": "^1.2.1",
+    "date-fns": "^2.29.0",
+    "lucide-react": "^0.263.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.43.0",
+    "react-hot-toast": "^2.4.0",
+    "react-router-dom": "^6.8.0",
+    "react-scripts": "5.0.1",
+    "recharts": "^2.5.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
