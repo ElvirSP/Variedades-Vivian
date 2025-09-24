@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Plus, Eye, Calendar, CreditCard } from 'lucide-react';
+import { Plus, Calendar, Eye } from 'lucide-react';
 import { api } from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -33,20 +33,6 @@ const Ventas = () => {
     }
   };
 
-  const getMetodoPagoIcon = (metodo) => {
-    switch (metodo) {
-      case 'efectivo':
-        return '💵';
-      case 'tarjeta':
-        return '💳';
-      case 'transferencia':
-        return '🏦';
-      case 'mixto':
-        return '💰';
-      default:
-        return '💵';
-    }
-  };
 
   return (
     <div>
@@ -72,10 +58,9 @@ const Ventas = () => {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Factura</th>
-                    <th>Cliente</th>
+                    <th>ID</th>
                     <th>Fecha</th>
-                    <th>Método de Pago</th>
+                    <th>Subtotal</th>
                     <th>Total</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -85,17 +70,7 @@ const Ventas = () => {
                   {data.ventas.map((venta) => (
                     <tr key={venta.id}>
                       <td className="font-mono text-sm font-medium text-gray-900">
-                        {venta.numero_factura}
-                      </td>
-                      <td>
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {venta.cliente_nombre || 'Cliente General'}
-                          </div>
-                          {venta.cliente_telefono && (
-                            <div className="text-sm text-gray-500">{venta.cliente_telefono}</div>
-                          )}
-                        </div>
+                        #{venta.id}
                       </td>
                       <td>
                         <div className="flex items-center">
@@ -105,11 +80,8 @@ const Ventas = () => {
                           </span>
                         </div>
                       </td>
-                      <td>
-                        <div className="flex items-center">
-                          <span className="mr-1">{getMetodoPagoIcon(venta.metodo_pago)}</span>
-                          <span className="text-sm text-gray-900 capitalize">{venta.metodo_pago}</span>
-                        </div>
+                      <td className="text-sm font-medium text-gray-900">
+                        ${parseFloat(venta.subtotal).toLocaleString()}
                       </td>
                       <td className="text-sm font-semibold text-gray-900">
                         ${parseFloat(venta.total).toLocaleString()}
@@ -122,7 +94,8 @@ const Ventas = () => {
                       <td>
                         <Link
                           to={`/ventas/${venta.id}`}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-blue-600 hover:text-blue-900 transition-colors"
+                          title="Ver detalles de la venta"
                         >
                           <Eye className="h-4 w-4" />
                         </Link>

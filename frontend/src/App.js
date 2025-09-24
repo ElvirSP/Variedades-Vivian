@@ -12,6 +12,7 @@ import Proveedores from './pages/Proveedores';
 import ProveedorForm from './pages/ProveedorForm';
 import Ventas from './pages/Ventas';
 import VentaForm from './pages/VentaForm';
+import VentaDetalle from './pages/VentaDetalle';
 import Devoluciones from './pages/Devoluciones';
 import DevolucionForm from './pages/DevolucionForm';
 import Perfil from './pages/Perfil';
@@ -52,6 +53,7 @@ function AppContent() {
         <Route path="/proveedores/:id/editar" element={<ProveedorForm />} />
         <Route path="/ventas" element={<Ventas />} />
         <Route path="/ventas/nueva" element={<VentaForm />} />
+        <Route path="/ventas/:id" element={<VentaDetalle />} />
         <Route path="/devoluciones" element={<Devoluciones />} />
         <Route path="/devoluciones/nueva" element={<DevolucionForm />} />
         <Route path="/perfil" element={<Perfil />} />

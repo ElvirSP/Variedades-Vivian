@@ -7,14 +7,6 @@ const Devolucion = sequelize.define('Devolucion', {
     primaryKey: true,
     autoIncrement: true
   },
-  numero_devolucion: {
-    type: DataTypes.STRING(50),
-    allowNull: false,
-    unique: true,
-    validate: {
-      notEmpty: true
-    }
-  },
   venta_id: {
     type: DataTypes.INTEGER,
     allowNull: false,

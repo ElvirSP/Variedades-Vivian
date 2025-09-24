@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +19,16 @@ const ProveedorForm = () => {
     queryFn: () => api.get(`/proveedores/${id}`).then(res => res.data.data.proveedor),
     enabled: isEditing,
     onSuccess: (data) => {
-      reset(data);
+      if (data) {
+        reset({
+          nombre: data.nombre || '',
+          contacto: data.contacto || '',
+          telefono: data.telefono || '',
+          email: data.email || '',
+          direccion: data.direccion || '',
+          activo: data.activo !== undefined ? data.activo : true
+        });
+      }
     }
   });
 
@@ -41,14 +50,31 @@ const ProveedorForm = () => {
     }
   });
 
+  // Efecto para llenar los campos cuando los datos del proveedor cambien
+  useEffect(() => {
+    if (isEditing && proveedor) {
+      reset({
+        nombre: proveedor.nombre || '',
+        contacto: proveedor.contacto || '',
+        telefono: proveedor.telefono || '',
+        email: proveedor.email || '',
+        direccion: proveedor.direccion || '',
+        activo: proveedor.activo !== undefined ? proveedor.activo : true
+      });
+    }
+  }, [proveedor, isEditing, reset]);
+
   const onSubmit = (data) => {
     mutation.mutate(data);
   };
 
   if (isEditing && isLoading) {
     return (
-      <div className="loading">
-        <div className="spinner"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="spinner mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando datos del proveedor...</p>
+        </div>
       </div>
     );
   }
@@ -69,6 +95,13 @@ const ProveedorForm = () => {
         <p className="mt-1 text-sm text-gray-500">
           {isEditing ? 'Modifica la información del proveedor' : 'Agrega un nuevo proveedor'}
         </p>
+        {isEditing && proveedor && (
+          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-sm text-green-700">
+              ✓ Datos del proveedor cargados correctamente
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="card">
@@ -120,6 +153,17 @@ const ProveedorForm = () => {
                 {errors.email && (
                   <p className="form-error">{errors.email.message}</p>
                 )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Estado</label>
+                <select
+                  className="form-select"
+                  {...register('activo')}
+                >
+                  <option value={true}>Activo</option>
+                  <option value={false}>Inactivo</option>
+                </select>
               </div>
             </div>
 

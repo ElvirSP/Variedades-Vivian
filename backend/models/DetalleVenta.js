@@ -37,14 +37,6 @@ const DetalleVenta = sequelize.define('DetalleVenta', {
       min: 0
     }
   },
-  descuento: {
-    type: DataTypes.DECIMAL(10, 2),
-    allowNull: false,
-    defaultValue: 0,
-    validate: {
-      min: 0
-    }
-  },
   subtotal: {
     type: DataTypes.DECIMAL(10, 2),
     allowNull: false,

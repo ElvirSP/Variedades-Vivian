@@ -9,6 +9,7 @@ router.use(auth);
 // Rutas de ventas
 router.get('/', ventaController.obtenerVentas);
 router.get('/estadisticas', ventaController.obtenerEstadisticasVentas);
+router.get('/para-devolucion', ventaController.obtenerVentasParaDevolucion);
 router.get('/:id', ventaController.obtenerVenta);
 router.post('/', ventaController.crearVenta);
 router.patch('/:id/estado', ventaController.actualizarEstadoVenta);

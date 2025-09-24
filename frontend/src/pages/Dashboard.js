@@ -53,12 +53,12 @@ const Dashboard = () => {
       bgColor: 'bg-red-100',
     },
     {
-      name: 'Devoluciones Pendientes',
-      value: resumen?.alertas?.devolucionesPendientes || 0,
-      change: 'Por procesar',
+      name: 'Devoluciones del Día',
+      value: resumen?.alertas?.devolucionesHoy || 0,
+      change: 'Registradas hoy',
       icon: RotateCcw,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-100',
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-100',
     },
     {
       name: 'Total Productos',

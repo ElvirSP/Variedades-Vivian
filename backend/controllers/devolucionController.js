@@ -1,31 +1,6 @@
-const { Devolucion, Venta, Producto, Usuario } = require('../models');
+const { Devolucion, Venta, DetalleVenta, Producto, Usuario } = require('../models');
 const { Op } = require('sequelize');
 
-// Generar número de devolución único
-const generarNumeroDevolucion = async () => {
-  const fecha = new Date();
-  const año = fecha.getFullYear();
-  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-  const dia = String(fecha.getDate()).padStart(2, '0');
-  
-  // Buscar la última devolución del día
-  const ultimaDevolucion = await Devolucion.findOne({
-    where: {
-      numero_devolucion: {
-        [Op.like]: `D${año}${mes}${dia}%`
-      }
-    },
-    order: [['numero_devolucion', 'DESC']]
-  });
-
-  let consecutivo = 1;
-  if (ultimaDevolucion) {
-    const ultimoConsecutivo = parseInt(ultimaDevolucion.numero_devolucion.slice(-4));
-    consecutivo = ultimoConsecutivo + 1;
-  }
-
-  return `D${año}${mes}${dia}${String(consecutivo).padStart(4, '0')}`;
-};
 
 // Obtener todas las devoluciones
 const obtenerDevoluciones = async (req, res) => {
@@ -69,7 +44,6 @@ const obtenerDevoluciones = async (req, res) => {
 
     if (busqueda) {
       filtros[Op.or] = [
-        { numero_devolucion: { [Op.like]: `%${busqueda}%` } },
         { descripcion: { [Op.like]: `%${busqueda}%` } }
       ];
     }
@@ -85,7 +59,7 @@ const obtenerDevoluciones = async (req, res) => {
         {
           model: Venta,
           as: 'venta',
-          attributes: ['id', 'numero_factura', 'fecha']
+          attributes: ['id', 'fecha']
         },
         {
           model: Producto,
@@ -209,11 +183,14 @@ const crearDevolucion = async (req, res) => {
     }
 
     // Verificar que el producto está en la venta
-    const detalleVenta = await venta.getDetalles({
-      where: { producto_id }
+    const detalleVenta = await DetalleVenta.findOne({
+      where: { 
+        venta_id: venta_id,
+        producto_id: producto_id
+      }
     });
 
-    if (detalleVenta.length === 0) {
+    if (!detalleVenta) {
       await transaction.rollback();
       return res.status(400).json({
         success: false,
@@ -221,7 +198,7 @@ const crearDevolucion = async (req, res) => {
       });
     }
 
-    const cantidadVendida = detalleVenta[0].cantidad;
+    const cantidadVendida = detalleVenta.cantidad;
     if (cantidad > cantidadVendida) {
       await transaction.rollback();
       return res.status(400).json({
@@ -230,15 +207,12 @@ const crearDevolucion = async (req, res) => {
       });
     }
 
-    // Generar número de devolución
-    const numero_devolucion = await generarNumeroDevolucion();
 
     // Calcular monto de devolución
     const monto_devolucion = cantidad * producto.precio_venta;
 
     // Crear devolución
     const devolucion = await Devolucion.create({
-      numero_devolucion,
       venta_id,
       producto_id,
       cantidad,
@@ -256,7 +230,7 @@ const crearDevolucion = async (req, res) => {
         {
           model: Venta,
           as: 'venta',
-          attributes: ['id', 'numero_factura', 'fecha']
+          attributes: ['id', 'fecha']
         },
         {
           model: Producto,

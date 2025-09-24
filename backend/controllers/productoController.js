@@ -96,7 +96,6 @@ const obtenerProducto = async (req, res) => {
 const crearProducto = async (req, res) => {
   try {
     const {
-      codigo,
       nombre,
       descripcion,
       precio_compra,
@@ -108,19 +107,10 @@ const crearProducto = async (req, res) => {
     } = req.body;
 
     // Validar datos requeridos
-    if (!codigo || !nombre || !precio_compra || !precio_venta || !categoria_id) {
+    if (!nombre || !precio_compra || !precio_venta || !categoria_id) {
       return res.status(400).json({
         success: false,
-        message: 'Código, nombre, precios y categoría son requeridos'
-      });
-    }
-
-    // Verificar si el código ya existe
-    const productoExistente = await Producto.findOne({ where: { codigo } });
-    if (productoExistente) {
-      return res.status(400).json({
-        success: false,
-        message: 'Ya existe un producto con este código'
+        message: 'Nombre, precios y categoría son requeridos'
       });
     }
 
@@ -143,6 +133,13 @@ const crearProducto = async (req, res) => {
         });
       }
     }
+
+    // Generar código automático
+    const ultimoProducto = await Producto.findOne({
+      order: [['id', 'DESC']]
+    });
+    const siguienteNumero = ultimoProducto ? ultimoProducto.id + 1 : 1;
+    const codigo = `PROD-${String(siguienteNumero).padStart(4, '0')}`;
 
     const producto = await Producto.create({
       codigo,
@@ -339,11 +336,61 @@ const obtenerProductosStockBajo = async (req, res) => {
   }
 };
 
+// Obtener productos por categoría para ventas
+const obtenerProductosPorCategoria = async (req, res) => {
+  try {
+    const { categoria_id, busqueda = '' } = req.query;
+
+    if (!categoria_id) {
+      return res.status(400).json({
+        success: false,
+        message: 'La categoría es requerida'
+      });
+    }
+
+    // Construir filtros
+    const filtros = {
+      categoria_id: parseInt(categoria_id),
+      activo: true,
+      stock: { [Op.gt]: 0 } // Solo productos con stock disponible
+    };
+
+    if (busqueda) {
+      filtros[Op.or] = [
+        { nombre: { [Op.like]: `%${busqueda}%` } },
+        { codigo: { [Op.like]: `%${busqueda}%` } },
+        { descripcion: { [Op.like]: `%${busqueda}%` } }
+      ];
+    }
+
+    const productos = await Producto.findAll({
+      where: filtros,
+      include: [
+        { model: Categoria, as: 'categoria', attributes: ['id', 'nombre'] }
+      ],
+      order: [['nombre', 'ASC']]
+    });
+
+    res.json({
+      success: true,
+      data: { productos }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener productos por categoría:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   obtenerProductos,
   obtenerProducto,
   crearProducto,
   actualizarProducto,
   eliminarProducto,
-  obtenerProductosStockBajo
+  obtenerProductosStockBajo,
+  obtenerProductosPorCategoria
 };

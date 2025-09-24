@@ -39,9 +39,13 @@ const obtenerResumen = async (req, res) => {
       }
     });
 
-    // Devoluciones pendientes
-    const devolucionesPendientes = await Devolucion.count({
-      where: { estado: 'pendiente' }
+    // Devoluciones del día
+    const devolucionesHoy = await Devolucion.count({
+      where: {
+        fecha_devolucion: {
+          [Op.between]: [inicioDia, finDia]
+        }
+      }
     });
 
     // Total de productos activos
@@ -85,7 +89,7 @@ const obtenerResumen = async (req, res) => {
           },
           alertas: {
             productosStockBajo,
-            devolucionesPendientes
+            devolucionesHoy
           },
           inventario: {
             totalProductos,

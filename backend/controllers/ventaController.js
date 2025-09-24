@@ -1,31 +1,6 @@
 const { Venta, DetalleVenta, Producto, Usuario } = require('../models');
 const { Op } = require('sequelize');
 
-// Generar número de factura único
-const generarNumeroFactura = async () => {
-  const fecha = new Date();
-  const año = fecha.getFullYear();
-  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-  const dia = String(fecha.getDate()).padStart(2, '0');
-  
-  // Buscar la última factura del día
-  const ultimaVenta = await Venta.findOne({
-    where: {
-      numero_factura: {
-        [Op.like]: `F${año}${mes}${dia}%`
-      }
-    },
-    order: [['numero_factura', 'DESC']]
-  });
-
-  let consecutivo = 1;
-  if (ultimaVenta) {
-    const ultimoConsecutivo = parseInt(ultimaVenta.numero_factura.slice(-4));
-    consecutivo = ultimoConsecutivo + 1;
-  }
-
-  return `F${año}${mes}${dia}${String(consecutivo).padStart(4, '0')}`;
-};
 
 // Obtener todas las ventas
 const obtenerVentas = async (req, res) => {
@@ -63,15 +38,9 @@ const obtenerVentas = async (req, res) => {
       filtros.estado = estado;
     }
 
-    if (metodo_pago) {
-      filtros.metodo_pago = metodo_pago;
-    }
-
     if (busqueda) {
       filtros[Op.or] = [
-        { numero_factura: { [Op.like]: `%${busqueda}%` } },
-        { cliente_nombre: { [Op.like]: `%${busqueda}%` } },
-        { cliente_telefono: { [Op.like]: `%${busqueda}%` } }
+        { observaciones: { [Op.like]: `%${busqueda}%` } }
       ];
     }
 
@@ -175,12 +144,7 @@ const crearVenta = async (req, res) => {
   
   try {
     const {
-      cliente_nombre,
-      cliente_telefono,
       productos,
-      descuento = 0,
-      impuesto = 0,
-      metodo_pago = 'efectivo',
       observaciones
     } = req.body;
 
@@ -193,8 +157,6 @@ const crearVenta = async (req, res) => {
       });
     }
 
-    // Generar número de factura
-    const numero_factura = await generarNumeroFactura();
 
     // Calcular totales
     let subtotal = 0;
@@ -229,8 +191,7 @@ const crearVenta = async (req, res) => {
       }
 
       const precio_unitario = item.precio_unitario || producto.precio_venta;
-      const descuento_item = item.descuento || 0;
-      const subtotal_item = (precio_unitario * item.cantidad) - descuento_item;
+      const subtotal_item = precio_unitario * item.cantidad;
 
       subtotal += subtotal_item;
 
@@ -238,23 +199,16 @@ const crearVenta = async (req, res) => {
         producto_id: item.producto_id,
         cantidad: item.cantidad,
         precio_unitario,
-        descuento: descuento_item,
         subtotal: subtotal_item
       });
     }
 
-    const total = subtotal - descuento + impuesto;
+    const total = subtotal;
 
     // Crear venta
     const venta = await Venta.create({
-      numero_factura,
-      cliente_nombre,
-      cliente_telefono,
       subtotal,
-      descuento,
-      impuesto,
       total,
-      metodo_pago,
       observaciones,
       usuario_id: req.usuario.id
     }, { transaction });
@@ -412,12 +366,11 @@ const obtenerEstadisticasVentas = async (req, res) => {
     const ventas = await Venta.findAll({
       where: filtros,
       attributes: [
-        'metodo_pago',
         'estado',
         [Venta.sequelize.fn('COUNT', Venta.sequelize.col('id')), 'cantidad'],
         [Venta.sequelize.fn('SUM', Venta.sequelize.col('total')), 'total']
       ],
-      group: ['metodo_pago', 'estado']
+      group: ['estado']
     });
 
     const totalVentas = await Venta.sum('total', { where: filtros });
@@ -444,11 +397,72 @@ const obtenerEstadisticasVentas = async (req, res) => {
   }
 };
 
+// Obtener ventas por rango de fechas para devoluciones
+const obtenerVentasParaDevolucion = async (req, res) => {
+  try {
+    const { fecha_desde, fecha_hasta } = req.query;
+
+    if (!fecha_desde || !fecha_hasta) {
+      return res.status(400).json({
+        success: false,
+        message: 'Las fechas desde y hasta son requeridas'
+      });
+    }
+
+    // Ajustar fechas para incluir todo el día
+    const fechaInicio = new Date(fecha_desde);
+    fechaInicio.setHours(0, 0, 0, 0); // Inicio del día
+    
+    const fechaFin = new Date(fecha_hasta);
+    fechaFin.setHours(23, 59, 59, 999); // Final del día
+
+    const ventas = await Venta.findAll({
+      where: {
+        fecha: {
+          [Op.between]: [fechaInicio, fechaFin]
+        }
+      },
+      include: [
+        { 
+          model: Usuario, 
+          as: 'usuario', 
+          attributes: ['id', 'nombre'] 
+        },
+        {
+          model: DetalleVenta,
+          as: 'detalles',
+          include: [
+            {
+              model: Producto,
+              as: 'producto',
+              attributes: ['id', 'nombre', 'codigo']
+            }
+          ]
+        }
+      ],
+      order: [['fecha', 'DESC']]
+    });
+
+    res.json({
+      success: true,
+      data: { ventas }
+    });
+
+  } catch (error) {
+    console.error('Error al obtener ventas para devolución:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   obtenerVentas,
   obtenerVenta,
   crearVenta,
   actualizarEstadoVenta,
   eliminarVenta,
-  obtenerEstadisticasVentas
+  obtenerEstadisticasVentas,
+  obtenerVentasParaDevolucion
 };

@@ -9,6 +9,7 @@ router.use(auth);
 // Rutas de productos
 router.get('/', productoController.obtenerProductos);
 router.get('/stock-bajo', productoController.obtenerProductosStockBajo);
+router.get('/por-categoria', productoController.obtenerProductosPorCategoria);
 router.get('/:id', productoController.obtenerProducto);
 router.post('/', productoController.crearProducto);
 router.put('/:id', productoController.actualizarProducto);

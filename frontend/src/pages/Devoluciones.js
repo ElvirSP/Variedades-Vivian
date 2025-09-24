@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Plus, Eye, Calendar, AlertCircle } from 'lucide-react';
+import { Plus, Calendar } from 'lucide-react';
 import { api } from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -19,21 +19,6 @@ const Devoluciones = () => {
       </div>
     );
   }
-
-  const getEstadoColor = (estado) => {
-    switch (estado) {
-      case 'pendiente':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'aprobada':
-        return 'bg-blue-100 text-blue-800';
-      case 'rechazada':
-        return 'bg-red-100 text-red-800';
-      case 'procesada':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const getMotivoColor = (motivo) => {
     switch (motivo) {
@@ -74,25 +59,23 @@ const Devoluciones = () => {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Número</th>
-                    <th>Factura</th>
+                    <th>ID</th>
+                    <th>Venta</th>
                     <th>Producto</th>
                     <th>Cantidad</th>
                     <th>Motivo</th>
                     <th>Monto</th>
-                    <th>Estado</th>
                     <th>Fecha</th>
-                    <th>Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.devoluciones.map((devolucion) => (
                     <tr key={devolucion.id}>
                       <td className="font-mono text-sm font-medium text-gray-900">
-                        {devolucion.numero_devolucion}
+                        #{devolucion.id}
                       </td>
                       <td className="font-mono text-sm text-gray-600">
-                        {devolucion.venta?.numero_factura}
+                        Venta #{devolucion.venta?.id}
                       </td>
                       <td>
                         <div>
@@ -116,38 +99,11 @@ const Devoluciones = () => {
                         ${parseFloat(devolucion.monto_devolucion).toLocaleString()}
                       </td>
                       <td>
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getEstadoColor(devolucion.estado)}`}>
-                          {devolucion.estado}
-                        </span>
-                      </td>
-                      <td>
                         <div className="flex items-center">
                           <Calendar className="h-4 w-4 text-gray-400 mr-1" />
                           <span className="text-sm text-gray-900">
                             {format(new Date(devolucion.fecha_devolucion), 'dd/MM/yyyy', { locale: es })}
                           </span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex space-x-2">
-                          <Link
-                            to={`/devoluciones/${devolucion.id}`}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Link>
-                          {devolucion.estado === 'pendiente' && (
-                            <button
-                              onClick={() => {
-                                // Aquí iría la lógica para procesar la devolución
-                                console.log('Procesar devolución:', devolucion.id);
-                              }}
-                              className="text-green-600 hover:text-green-900"
-                              title="Procesar devolución"
-                            >
-                              <AlertCircle className="h-4 w-4" />
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>

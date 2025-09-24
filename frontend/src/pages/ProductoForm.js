@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +19,20 @@ const ProductoForm = () => {
     queryFn: () => api.get(`/productos/${id}`).then(res => res.data.data.producto),
     enabled: isEditing,
     onSuccess: (data) => {
-      reset(data);
+      if (data) {
+        // Llenar todos los campos automáticamente
+        reset({
+          nombre: data.nombre || '',
+          descripcion: data.descripcion || '',
+          precio_compra: data.precio_compra || '',
+          precio_venta: data.precio_venta || '',
+          stock: data.stock || '',
+          stock_minimo: data.stock_minimo || '',
+          categoria_id: data.categoria_id || '',
+          proveedor_id: data.proveedor_id || '',
+          activo: data.activo !== undefined ? data.activo : true
+        });
+      }
     }
   });
 
@@ -51,14 +64,34 @@ const ProductoForm = () => {
     }
   });
 
+  // Efecto para llenar los campos cuando los datos del producto cambien
+  useEffect(() => {
+    if (isEditing && producto) {
+      reset({
+        nombre: producto.nombre || '',
+        descripcion: producto.descripcion || '',
+        precio_compra: producto.precio_compra || '',
+        precio_venta: producto.precio_venta || '',
+        stock: producto.stock || '',
+        stock_minimo: producto.stock_minimo || '',
+        categoria_id: producto.categoria_id || '',
+        proveedor_id: producto.proveedor_id || '',
+        activo: producto.activo !== undefined ? producto.activo : true
+      });
+    }
+  }, [producto, isEditing, reset]);
+
   const onSubmit = (data) => {
     mutation.mutate(data);
   };
 
   if (isEditing && isLoading) {
     return (
-      <div className="loading">
-        <div className="spinner"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="spinner mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando datos del producto...</p>
+        </div>
       </div>
     );
   }
@@ -79,23 +112,32 @@ const ProductoForm = () => {
         <p className="mt-1 text-sm text-gray-500">
           {isEditing ? 'Modifica la información del producto' : 'Agrega un nuevo producto al inventario'}
         </p>
+        {isEditing && producto && (
+          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-sm text-green-700">
+              ✓ Datos del producto cargados correctamente
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="card">
         <div className="card-body">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="form-group">
-                <label className="form-label">Código *</label>
-                <input
-                  type="text"
-                  className={`form-input ${errors.codigo ? 'error' : ''}`}
-                  {...register('codigo', { required: 'El código es requerido' })}
-                />
-                {errors.codigo && (
-                  <p className="form-error">{errors.codigo.message}</p>
-                )}
-              </div>
+              {isEditing && producto && (
+                <div className="form-group">
+                  <label className="form-label">Código del Producto</label>
+                  <input
+                    type="text"
+                    className="form-input bg-gray-100 cursor-not-allowed"
+                    value={producto.codigo || ''}
+                    readOnly
+                    disabled
+                  />
+                  <p className="text-xs text-gray-500 mt-1">El código no se puede modificar</p>
+                </div>
+              )}
 
               <div className="form-group">
                 <label className="form-label">Nombre *</label>

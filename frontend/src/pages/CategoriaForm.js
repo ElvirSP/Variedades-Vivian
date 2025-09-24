@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +19,13 @@ const CategoriaForm = () => {
     queryFn: () => api.get(`/categorias/${id}`).then(res => res.data.data.categoria),
     enabled: isEditing,
     onSuccess: (data) => {
-      reset(data);
+      if (data) {
+        reset({
+          nombre: data.nombre || '',
+          descripcion: data.descripcion || '',
+          activa: data.activa !== undefined ? data.activa : true
+        });
+      }
     }
   });
 
@@ -41,14 +47,28 @@ const CategoriaForm = () => {
     }
   });
 
+  // Efecto para llenar los campos cuando los datos de la categoría cambien
+  useEffect(() => {
+    if (isEditing && categoria) {
+      reset({
+        nombre: categoria.nombre || '',
+        descripcion: categoria.descripcion || '',
+        activa: categoria.activa !== undefined ? categoria.activa : true
+      });
+    }
+  }, [categoria, isEditing, reset]);
+
   const onSubmit = (data) => {
     mutation.mutate(data);
   };
 
   if (isEditing && isLoading) {
     return (
-      <div className="loading">
-        <div className="spinner"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="spinner mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando datos de la categoría...</p>
+        </div>
       </div>
     );
   }
@@ -69,13 +89,21 @@ const CategoriaForm = () => {
         <p className="mt-1 text-sm text-gray-500">
           {isEditing ? 'Modifica la información de la categoría' : 'Crea una nueva categoría de productos'}
         </p>
+        {isEditing && categoria && (
+          <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-md">
+            <p className="text-sm text-green-700">
+              ✓ Datos de la categoría cargados correctamente
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="card">
         <div className="card-body">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            <div className="form-group">
-              <label className="form-label">Nombre *</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="form-group">
+                <label className="form-label">Nombre *</label>
               <input
                 type="text"
                 className={`form-input ${errors.nombre ? 'error' : ''}`}
@@ -84,6 +112,18 @@ const CategoriaForm = () => {
               {errors.nombre && (
                 <p className="form-error">{errors.nombre.message}</p>
               )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Estado</label>
+                <select
+                  className="form-select"
+                  {...register('activa')}
+                >
+                  <option value={true}>Activa</option>
+                  <option value={false}>Inactiva</option>
+                </select>
+              </div>
             </div>
 
             <div className="form-group">

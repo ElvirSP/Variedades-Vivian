@@ -9,7 +9,7 @@ const Producto = sequelize.define('Producto', {
   },
   codigo: {
     type: DataTypes.STRING(50),
-    allowNull: false,
+    allowNull: true,
     unique: true,
     validate: {
       notEmpty: true
