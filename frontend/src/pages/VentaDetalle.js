@@ -153,13 +153,10 @@ const VentaDetalle = () => {
             </div>
             <div className="card-body">
               <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Subtotal:</span>
-                  <span className="text-sm font-medium">${parseFloat(venta.subtotal).toLocaleString()}</span>
-                </div>
+                
                 <div className="flex justify-between border-t pt-3">
                   <span className="text-sm font-semibold text-gray-900">Total:</span>
-                  <span className="text-lg font-bold text-gray-900">${parseFloat(venta.total).toLocaleString()}</span>
+                  <span className="text-lg font-bold text-gray-900">Q{parseFloat(venta.total).toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -202,10 +199,10 @@ const VentaDetalle = () => {
                             </span>
                           </td>
                           <td className="text-sm font-medium text-gray-900">
-                            ${parseFloat(detalle.precio_unitario).toLocaleString()}
+                            Q{parseFloat(detalle.precio_unitario).toLocaleString()}
                           </td>
                           <td className="text-sm font-semibold text-gray-900">
-                            ${parseFloat(detalle.subtotal).toLocaleString()}
+                            Q{parseFloat(detalle.subtotal).toLocaleString()}
                           </td>
                         </tr>
                       ))}

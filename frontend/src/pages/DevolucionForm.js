@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Save, ArrowLeft, Calendar, Search } from 'lucide-react';
+import { Save, ArrowLeft, Calendar, Search, X } from 'lucide-react';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -185,7 +185,7 @@ const DevolucionForm = () => {
                       Venta #{venta.id}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {new Date(venta.fecha).toLocaleDateString()} - ${parseFloat(venta.total).toLocaleString()}
+                      {new Date(venta.fecha).toLocaleDateString()} - Q{parseFloat(venta.total).toLocaleString()}
                     </div>
                     <div className="text-xs text-gray-400">
                       {venta.detalles?.length || 0} producto(s)
@@ -228,7 +228,7 @@ const DevolucionForm = () => {
                   >
                     <div className="font-medium text-gray-900">{detalle.producto.nombre}</div>
                     <div className="text-sm text-gray-500">
-                      Cantidad: {detalle.cantidad} | Precio: ${detalle.precio_unitario.toLocaleString()}
+                      Cantidad: {detalle.cantidad} | Precio: Q{detalle.precio_unitario.toLocaleString()}
                     </div>
                     <div className="text-xs text-gray-400">
                       Código: {detalle.producto.codigo}
@@ -324,6 +324,7 @@ const DevolucionForm = () => {
                     onClick={() => navigate('/devoluciones')}
                     className="btn btn-outline"
                   >
+                    <X className="h-4 w-4 mr-2" />
                     Cancelar
                   </button>
                   <button

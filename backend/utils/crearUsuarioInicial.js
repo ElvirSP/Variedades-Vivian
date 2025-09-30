@@ -17,15 +17,15 @@ const crearUsuarioInicial = async () => {
         activo: true
       });
 
-      console.log('✅ Usuario administrador creado exitosamente');
-      console.log('📧 Email: admin@tienda.com');
-      console.log('🔑 Contraseña: admin123');
-      console.log('⚠️  IMPORTANTE: Cambiar la contraseña después del primer login');
+      console.log('Usuario administrador creado exitosamente');
+      console.log('Email: admin@tienda.com');
+      console.log('Contraseña: admin123');
+      console.log('IMPORTANTE: Cambiar la contraseña después del primer login');
     } else {
-      console.log('ℹ️  Usuario administrador ya existe');
+      console.log('Usuario administrador ya existe');
     }
   } catch (error) {
-    console.error('❌ Error al crear usuario inicial:', error.message);
+    console.error('Error al crear usuario inicial:', error.message);
   }
 };
 

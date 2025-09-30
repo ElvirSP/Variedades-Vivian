@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft, X } from 'lucide-react';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -48,10 +48,21 @@ const ProductoForm = () => {
 
   const mutation = useMutation({
     mutationFn: (data) => {
+      // Asegurar que los valores numéricos se envíen correctamente
+      const processedData = {
+        ...data,
+        stock: data.stock ? parseInt(data.stock) : 0,
+        stock_minimo: data.stock_minimo ? parseInt(data.stock_minimo) : 5,
+        precio_compra: data.precio_compra ? parseFloat(data.precio_compra) : 0,
+        precio_venta: data.precio_venta ? parseFloat(data.precio_venta) : 0
+      };
+      
+      console.log('Datos enviados:', processedData);
+      
       if (isEditing) {
-        return api.put(`/productos/${id}`, data);
+        return api.put(`/productos/${id}`, processedData);
       } else {
-        return api.post('/productos', data);
+        return api.post('/productos', processedData);
       }
     },
     onSuccess: () => {
@@ -185,34 +196,88 @@ const ProductoForm = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Precio de Compra *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  className={`form-input ${errors.precio_compra ? 'error' : ''}`}
-                  {...register('precio_compra', { 
-                    required: 'El precio de compra es requerido',
-                    min: { value: 0, message: 'El precio debe ser mayor a 0' }
-                  })}
-                />
+                <label className="form-label">Precio de Compra (Q) *</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--secondary-500)',
+                    fontWeight: '500'
+                  }}>Q</span>
+                  <input
+                    type="text"
+                    className={`form-input ${errors.precio_compra ? 'error' : ''}`}
+                    style={{ paddingLeft: '32px' }}
+                    placeholder="0.00"
+                    {...register('precio_compra', { 
+                      required: 'El precio de compra es requerido',
+                      pattern: {
+                        value: /^\d+(\.\d{1,2})?$/,
+                        message: 'Formato inválido (ej: 120.50)'
+                      },
+                      onChange: (e) => {
+                        // Permitir solo números y un punto decimal
+                        let value = e.target.value.replace(/[^0-9.]/g, '');
+                        // Solo permitir un punto decimal
+                        const parts = value.split('.');
+                        if (parts.length > 2) {
+                          value = parts[0] + '.' + parts.slice(1).join('');
+                        }
+                        // Limitar a 2 decimales
+                        if (parts[1] && parts[1].length > 2) {
+                          value = parts[0] + '.' + parts[1].substring(0, 2);
+                        }
+                        e.target.value = value;
+                      }
+                    })}
+                  />
+                </div>
                 {errors.precio_compra && (
                   <p className="form-error">{errors.precio_compra.message}</p>
                 )}
               </div>
 
               <div className="form-group">
-                <label className="form-label">Precio de Venta *</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  className={`form-input ${errors.precio_venta ? 'error' : ''}`}
-                  {...register('precio_venta', { 
-                    required: 'El precio de venta es requerido',
-                    min: { value: 0, message: 'El precio debe ser mayor a 0' }
-                  })}
-                />
+                <label className="form-label">Precio de Venta (Q) *</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--secondary-500)',
+                    fontWeight: '500'
+                  }}>Q</span>
+                  <input
+                    type="text"
+                    className={`form-input ${errors.precio_venta ? 'error' : ''}`}
+                    style={{ paddingLeft: '32px' }}
+                    placeholder="0.00"
+                    {...register('precio_venta', { 
+                      required: 'El precio de venta es requerido',
+                      pattern: {
+                        value: /^\d+(\.\d{1,2})?$/,
+                        message: 'Formato inválido (ej: 200.00)'
+                      },
+                      onChange: (e) => {
+                        // Permitir solo números y un punto decimal
+                        let value = e.target.value.replace(/[^0-9.]/g, '');
+                        // Solo permitir un punto decimal
+                        const parts = value.split('.');
+                        if (parts.length > 2) {
+                          value = parts[0] + '.' + parts.slice(1).join('');
+                        }
+                        // Limitar a 2 decimales
+                        if (parts[1] && parts[1].length > 2) {
+                          value = parts[0] + '.' + parts[1].substring(0, 2);
+                        }
+                        e.target.value = value;
+                      }
+                    })}
+                  />
+                </div>
                 {errors.precio_venta && (
                   <p className="form-error">{errors.precio_venta.message}</p>
                 )}
@@ -221,20 +286,48 @@ const ProductoForm = () => {
               <div className="form-group">
                 <label className="form-label">Stock Inicial</label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
                   className="form-input"
-                  {...register('stock', { min: 0 })}
+                  placeholder="0"
+                  {...register('stock', { 
+                    min: 0,
+                    onChange: (e) => {
+                      // Permitir solo números enteros
+                      let value = e.target.value.replace(/[^0-9]/g, '');
+                      // Si está vacío, permitir que se mantenga vacío
+                      if (value === '') {
+                        e.target.value = '';
+                        return;
+                      }
+                      // Convertir a entero
+                      const intValue = parseInt(value);
+                      e.target.value = intValue.toString();
+                    }
+                  })}
                 />
               </div>
 
               <div className="form-group">
                 <label className="form-label">Stock Mínimo</label>
                 <input
-                  type="number"
-                  min="0"
+                  type="text"
                   className="form-input"
-                  {...register('stock_minimo', { min: 0 })}
+                  placeholder="5"
+                  {...register('stock_minimo', { 
+                    min: 0,
+                    onChange: (e) => {
+                      // Permitir solo números enteros
+                      let value = e.target.value.replace(/[^0-9]/g, '');
+                      // Si está vacío, permitir que se mantenga vacío
+                      if (value === '') {
+                        e.target.value = '';
+                        return;
+                      }
+                      // Convertir a entero
+                      const intValue = parseInt(value);
+                      e.target.value = intValue.toString();
+                    }
+                  })}
                 />
               </div>
             </div>
@@ -254,6 +347,7 @@ const ProductoForm = () => {
                 onClick={() => navigate('/productos')}
                 className="btn btn-outline"
               >
+                <X className="h-4 w-4 mr-2" />
                 Cancelar
               </button>
               <button

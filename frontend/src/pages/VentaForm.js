@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
-import { Save, ArrowLeft, Plus, Trash2, Search, ShoppingCart } from 'lucide-react';
+import { Save, ArrowLeft, Plus, Trash2, Search, ShoppingCart, X } from 'lucide-react';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -195,7 +195,7 @@ const VentaForm = () => {
                                 <div className="flex-1">
                                   <div className="font-medium text-gray-900">{producto.nombre}</div>
                                   <div className="text-sm text-gray-500">
-                                    Código: {producto.codigo} | Stock: {producto.stock} | Precio: ${producto.precio_venta.toLocaleString()}
+                                    Código: {producto.codigo} | Stock: {producto.stock} | Precio: Q{producto.precio_venta.toLocaleString()}
                                   </div>
                                 </div>
                                 <button
@@ -245,7 +245,7 @@ const VentaForm = () => {
                     <div key={producto.producto_id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                       <div className="flex-1 min-w-0">
                         <div className="font-medium text-gray-900 text-sm truncate">{producto.nombre}</div>
-                        <div className="text-xs text-gray-500">${producto.precio_unitario.toLocaleString()}</div>
+                        <div className="text-xs text-gray-500">Q{producto.precio_unitario.toLocaleString()}</div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <input
@@ -273,7 +273,7 @@ const VentaForm = () => {
                   <div className="flex justify-between items-center">
                     <span className="text-lg font-medium text-gray-900">Total:</span>
                     <span className="text-xl font-bold text-gray-900">
-                      ${calcularTotal().toLocaleString()}
+                      Q{calcularTotal().toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -313,6 +313,7 @@ const VentaForm = () => {
                     onClick={() => navigate('/ventas')}
                     className="btn btn-outline"
                   >
+                    <X className="h-4 w-4 mr-2" />
                     Cancelar
                   </button>
                   <button

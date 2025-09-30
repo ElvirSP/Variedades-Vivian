@@ -96,7 +96,7 @@ const Devoluciones = () => {
                         </span>
                       </td>
                       <td className="text-sm font-semibold text-gray-900">
-                        ${parseFloat(devolucion.monto_devolucion).toLocaleString()}
+                        Q{parseFloat(devolucion.monto_devolucion).toLocaleString()}
                       </td>
                       <td>
                         <div className="flex items-center">

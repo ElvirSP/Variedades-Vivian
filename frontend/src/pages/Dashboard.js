@@ -1,36 +1,65 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Package, 
   ShoppingCart, 
   AlertTriangle, 
-  RotateCcw
+  RotateCcw,
+  BarChart3,
+  TrendingDown,
+  Target,
+  TrendingUp,
+  Calculator
 } from 'lucide-react';
 import api from '../services/api';
+import Graficas from '../components/Graficas';
 
 const Dashboard = () => {
+  const queryClient = useQueryClient();
+  
   const { data: resumen, isLoading, error } = useQuery({
     queryKey: ['dashboard-resumen'],
     queryFn: () => api.get('/dashboard/resumen').then(res => res.data.data.resumen),
-    refetchInterval: 30000,
+    refetchInterval: false, // Desactivar refetch automático
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    retry: 3,
+    retryDelay: 1000,
+  });
+
+  const recalcularTotalesMutation = useMutation({
+    mutationFn: () => api.post('/dashboard/recalcular-totales'),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['dashboard-resumen']);
+      alert('Totales recalculados exitosamente');
+    },
+    onError: (error) => {
+      console.error('Error al recalcular totales:', error);
+      alert('Error al recalcular totales');
+    }
   });
 
   if (error) {
     console.error('Error en Dashboard:', error);
     return (
-      <div>
-        <h1>Dashboard</h1>
-        <p>Error al cargar datos: {error.message}</p>
-        <p>Verifica que el backend esté funcionando en http://localhost:3001</p>
+      <div className="card">
+        <div className="card-body text-center">
+          <h1 className="text-2xl font-bold text-secondary-800 mb-4">Dashboard</h1>
+          <div className="text-error mb-2">Error al cargar datos: {error.message}</div>
+          <div className="text-secondary-600">Verifica que el backend esté funcionando en http://localhost:3001</div>
+        </div>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div>
-        <h1>Dashboard</h1>
-        <p>Cargando...</p>
+      <div className="card">
+        <div className="card-body text-center">
+          <h1 className="text-2xl font-bold text-secondary-800 mb-4">Dashboard</h1>
+          <div className="loading">
+            <div className="spinner"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -39,44 +68,53 @@ const Dashboard = () => {
     {
       name: 'Ventas Hoy',
       value: resumen?.ventasHoy?.cantidad || 0,
-      change: `$${resumen?.ventasHoy?.total?.toLocaleString() || 0}`,
+      change: `Q${resumen?.ventasHoy?.total?.toLocaleString() || 0}`,
       icon: ShoppingCart,
       color: 'text-green-600',
-      bgColor: 'bg-green-100',
     },
     {
       name: 'Productos con Stock Bajo',
       value: resumen?.alertas?.productosStockBajo || 0,
       change: 'Requieren atención',
       icon: AlertTriangle,
-      color: 'text-red-600',
-      bgColor: 'bg-red-100',
+      color: 'text-orange-600',
     },
     {
       name: 'Devoluciones del Día',
       value: resumen?.alertas?.devolucionesHoy || 0,
       change: 'Registradas hoy',
       icon: RotateCcw,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: 'text-purple-700',
     },
     {
       name: 'Total Productos',
       value: resumen?.inventario?.totalProductos || 0,
       change: `${resumen?.inventario?.totalCategorias || 0} categorías`,
       icon: Package,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: 'text-purple-700',
     },
   ];
 
   return (
-    <div>
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#111827' }}>
+    <div style={{ 
+      background: 'linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 50%, var(--secondary-50) 100%)',
+      minHeight: '100vh',
+      padding: '2rem 0'
+    }}>
+      <div style={{ marginBottom: '2rem', padding: '0 1rem' }}>
+        <h1 style={{ 
+          fontSize: '2rem', 
+          fontWeight: 'bold', 
+          color: 'var(--secondary-800)',
+          marginBottom: '0.5rem'
+        }}>
           Dashboard
         </h1>
-        <p style={{ marginTop: '0.25rem', fontSize: '0.875rem', color: '#6b7280' }}>
+        <p style={{ 
+          fontSize: '0.875rem', 
+          color: 'var(--secondary-600)',
+          margin: 0
+        }}>
           Resumen del día {new Date().toLocaleDateString('es-ES')}
         </p>
       </div>
@@ -85,32 +123,57 @@ const Dashboard = () => {
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-        gap: '1.25rem', 
+        gap: '1rem', 
         marginBottom: '2rem' 
       }}>
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <div key={stat.name} style={{
-              backgroundColor: 'white',
-              borderRadius: '0.5rem',
-              boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-              border: '1px solid #e5e7eb',
-              padding: '1.5rem'
+            <div key={stat.name} style={{ 
+              background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.8) 100%)',
+              borderRadius: 'var(--radius-lg)',
+              boxShadow: 'var(--shadow-lg)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              padding: '1.5rem',
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.3s ease-in-out'
             }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={{
-                  flexShrink: 0,
-                  padding: '0.75rem',
-                  borderRadius: '0.5rem',
-                  backgroundColor: stat.bgColor.replace('bg-', '#').replace('-100', '')
+                <div style={{ 
+                  flexShrink: 0, 
+                  marginRight: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
                 }}>
-                  <Icon style={{ width: '1.5rem', height: '1.5rem', color: stat.color.replace('text-', '#').replace('-600', '') }} />
+                  <Icon style={{ 
+                    width: '2rem', 
+                    height: '2rem', 
+                    color: stat.color === 'text-green-600' ? '#059669' : 
+                           stat.color === 'text-orange-600' ? '#d97706' :
+                           stat.color === 'text-purple-700' ? '#7c3aed' : '#6b7280'
+                  }} />
                 </div>
-                <div style={{ marginLeft: '1rem' }}>
-                  <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#6b7280' }}>{stat.name}</p>
-                  <p style={{ fontSize: '1.5rem', fontWeight: '600', color: '#111827' }}>{stat.value}</p>
-                  <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>{stat.change}</p>
+                <div style={{ flex: 1 }}>
+                  <p style={{ 
+                    fontSize: '0.875rem', 
+                    fontWeight: '500', 
+                    color: 'var(--secondary-600)',
+                    marginBottom: '0.25rem',
+                    margin: 0
+                  }}>{stat.name}</p>
+                  <p style={{ 
+                    fontSize: '1.5rem', 
+                    fontWeight: 'bold', 
+                    color: 'var(--secondary-800)',
+                    marginBottom: '0.25rem',
+                    margin: 0
+                  }}>{stat.value}</p>
+                  <p style={{ 
+                    fontSize: '0.75rem', 
+                    color: 'var(--secondary-500)',
+                    margin: 0
+                  }}>{stat.change}</p>
                 </div>
               </div>
             </div>
@@ -118,36 +181,22 @@ const Dashboard = () => {
         })}
       </div>
 
-      {/* Mensaje de bienvenida */}
-      <div style={{
-        backgroundColor: 'white',
-        borderRadius: '0.5rem',
-        boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-        border: '1px solid #e5e7eb',
-        padding: '2rem',
-        textAlign: 'center'
-      }}>
-        <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '1rem' }}>
-          ¡Bienvenido al Sistema de Gestión!
+      {/* Sección de Gráficas */}
+      <div style={{ marginTop: '3rem' }}>
+        <h2 style={{
+          fontSize: '1.5rem',
+          fontWeight: '600',
+          color: 'var(--secondary-800)',
+          marginBottom: '1.5rem',
+          textAlign: 'center'
+        }}>
+          <BarChart3 style={{ width: '1.5rem', height: '1.5rem', marginRight: '0.5rem', display: 'inline-block' }} />
+          Análisis de Ventas
         </h2>
-        <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-          Tu sistema de gestión para tienda de variedades está funcionando correctamente.
-        </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-          <div style={{ padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.375rem' }}>
-            <Package style={{ width: '2rem', height: '2rem', color: '#3b82f6', margin: '0 auto 0.5rem' }} />
-            <h3 style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151' }}>Gestionar Productos</h3>
-          </div>
-          <div style={{ padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.375rem' }}>
-            <ShoppingCart style={{ width: '2rem', height: '2rem', color: '#10b981', margin: '0 auto 0.5rem' }} />
-            <h3 style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151' }}>Registrar Ventas</h3>
-          </div>
-          <div style={{ padding: '1rem', border: '1px solid #e5e7eb', borderRadius: '0.375rem' }}>
-            <AlertTriangle style={{ width: '2rem', height: '2rem', color: '#f59e0b', margin: '0 auto 0.5rem' }} />
-            <h3 style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151' }}>Control de Stock</h3>
-          </div>
-        </div>
+        
+        <Graficas />
       </div>
+
     </div>
   );
 };

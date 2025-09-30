@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -8,14 +8,11 @@ import {
   ShoppingCart, 
   RotateCcw,
   User,
-  Menu,
-  X,
   LogOut
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Layout = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
 
@@ -33,25 +30,15 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f9fafb' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--secondary-50)' }}>
       {/* Sidebar desktop */}
-      <div style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        width: '256px', 
-        height: '100vh', 
-        backgroundColor: 'white',
-        borderRight: '1px solid #e5e7eb',
-        zIndex: 40,
-        display: 'none'
-      }} className="lg:block">
-        <div style={{ padding: '1rem' }}>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#111827' }}>
+      <div className="sidebar-desktop">
+        <div style={{ padding: 'var(--space-6)', borderBottom: '1px solid var(--secondary-200)' }}>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--secondary-800)' }}>
             Tienda Variedades
           </h1>
         </div>
-        <nav style={{ padding: '1rem 0.5rem' }}>
+        <nav style={{ padding: 'var(--space-4)' }}>
           {navigation.map((item) => {
             const Icon = item.icon;
             return (
@@ -61,17 +48,31 @@ const Layout = ({ children }) => {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  padding: '0.5rem',
-                  marginBottom: '0.25rem',
-                  borderRadius: '0.375rem',
+                  padding: 'var(--space-3)',
+                  marginBottom: 'var(--space-1)',
+                  borderRadius: 'var(--radius-lg)',
                   fontSize: '0.875rem',
                   fontWeight: '500',
                   textDecoration: 'none',
-                  color: isActive(item.href) ? '#1e40af' : '#4b5563',
-                  backgroundColor: isActive(item.href) ? '#dbeafe' : 'transparent'
+                  color: isActive(item.href) ? 'var(--primary-700)' : 'var(--secondary-600)',
+                  backgroundColor: isActive(item.href) ? 'var(--primary-100)' : 'transparent',
+                  boxShadow: isActive(item.href) ? 'var(--shadow-sm)' : 'none',
+                  transition: 'all 0.2s ease-in-out'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive(item.href)) {
+                    e.target.style.backgroundColor = 'var(--secondary-100)';
+                    e.target.style.color = 'var(--secondary-800)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive(item.href)) {
+                    e.target.style.backgroundColor = 'transparent';
+                    e.target.style.color = 'var(--secondary-600)';
+                  }
                 }}
               >
-                <Icon style={{ marginRight: '0.75rem', width: '1.25rem', height: '1.25rem' }} />
+                <Icon style={{ marginRight: 'var(--space-3)', width: '1.25rem', height: '1.25rem' }} />
                 {item.name}
               </Link>
             );
@@ -79,17 +80,17 @@ const Layout = ({ children }) => {
         </nav>
         <div style={{ 
           position: 'absolute', 
-          bottom: '1rem', 
-          left: '1rem', 
-          right: '1rem',
-          borderTop: '1px solid #e5e7eb',
-          paddingTop: '1rem'
+          bottom: 'var(--space-4)', 
+          left: 'var(--space-4)', 
+          right: 'var(--space-4)',
+          borderTop: '1px solid var(--secondary-200)',
+          paddingTop: 'var(--space-4)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem' }}>
-            <User style={{ width: '2rem', height: '2rem', color: '#9ca3af', marginRight: '0.75rem' }} />
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
+            <User style={{ width: '2rem', height: '2rem', color: 'var(--secondary-400)', marginRight: 'var(--space-3)' }} />
             <div>
-              <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151' }}>{user?.nombre}</p>
-              <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>{user?.rol}</p>
+              <p style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--secondary-700)' }}>{user?.nombre}</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--secondary-500)' }}>{user?.rol}</p>
             </div>
           </div>
           <div>
@@ -97,10 +98,20 @@ const Layout = ({ children }) => {
               to="/perfil"
               style={{
                 display: 'block',
-                padding: '0.5rem 0.75rem',
+                padding: 'var(--space-3)',
                 fontSize: '0.875rem',
-                color: '#4b5563',
-                textDecoration: 'none'
+                color: 'var(--secondary-600)',
+                textDecoration: 'none',
+                borderRadius: 'var(--radius-lg)',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'var(--secondary-100)';
+                e.target.style.color = 'var(--secondary-800)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = 'var(--secondary-600)';
               }}
             >
               Mi Perfil
@@ -111,15 +122,25 @@ const Layout = ({ children }) => {
                 display: 'flex',
                 alignItems: 'center',
                 width: '100%',
-                padding: '0.5rem 0.75rem',
+                padding: 'var(--space-3)',
                 fontSize: '0.875rem',
-                color: '#4b5563',
+                color: 'var(--secondary-600)',
                 background: 'none',
                 border: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                borderRadius: 'var(--radius-lg)',
+                transition: 'all 0.2s ease-in-out'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = 'var(--secondary-100)';
+                e.target.style.color = 'var(--secondary-800)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = 'transparent';
+                e.target.style.color = 'var(--secondary-600)';
               }}
             >
-              <LogOut style={{ marginRight: '0.5rem', width: '1rem', height: '1rem' }} />
+              <LogOut style={{ marginRight: 'var(--space-2)', width: '1rem', height: '1rem' }} />
               Cerrar Sesión
             </button>
           </div>
@@ -127,7 +148,7 @@ const Layout = ({ children }) => {
       </div>
 
       {/* Contenido principal */}
-      <div style={{ marginLeft: '256px' }} className="lg:ml-64">
+      <div className="main-content">
         {/* Header móvil */}
         <div style={{
           position: 'sticky',
@@ -136,24 +157,15 @@ const Layout = ({ children }) => {
           display: 'flex',
           height: '4rem',
           alignItems: 'center',
-          gap: '1rem',
-          borderBottom: '1px solid #e5e7eb',
+          justifyContent: 'center',
+          borderBottom: '1px solid var(--secondary-200)',
           backgroundColor: 'white',
           padding: '0 1rem',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
-        }} className="lg:hidden">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            style={{ color: '#374151' }}
-          >
-            <Menu style={{ width: '1.5rem', height: '1.5rem' }} />
-          </button>
-          <div style={{ display: 'flex', flex: 1, gap: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <User style={{ width: '1.5rem', height: '1.5rem', color: '#9ca3af' }} />
-              <span style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151' }}>{user?.nombre}</span>
-            </div>
+          boxShadow: 'var(--shadow-sm)'
+        }} className="header-mobile">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <User style={{ width: '1.5rem', height: '1.5rem', color: 'var(--secondary-400)' }} />
+            <span style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--secondary-700)' }}>{user?.nombre}</span>
           </div>
         </div>
 
@@ -165,103 +177,6 @@ const Layout = ({ children }) => {
         </main>
       </div>
 
-      {/* Sidebar móvil */}
-      {sidebarOpen && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 50,
-          backgroundColor: 'rgba(75, 85, 99, 0.75)'
-        }} onClick={() => setSidebarOpen(false)}>
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '16rem',
-            height: '100vh',
-            backgroundColor: 'white',
-            padding: '1rem'
-          }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#111827' }}>Tienda Variedades</h1>
-              <button
-                onClick={() => setSidebarOpen(false)}
-                style={{ color: '#9ca3af' }}
-              >
-                <X style={{ width: '1.5rem', height: '1.5rem' }} />
-              </button>
-            </div>
-            <nav style={{ marginBottom: '1rem' }}>
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    onClick={() => setSidebarOpen(false)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '0.5rem',
-                      marginBottom: '0.25rem',
-                      borderRadius: '0.375rem',
-                      fontSize: '0.875rem',
-                      fontWeight: '500',
-                      textDecoration: 'none',
-                      color: isActive(item.href) ? '#1e40af' : '#4b5563',
-                      backgroundColor: isActive(item.href) ? '#dbeafe' : 'transparent'
-                    }}
-                  >
-                    <Icon style={{ marginRight: '0.75rem', width: '1.25rem', height: '1.25rem' }} />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
-            <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <User style={{ width: '2rem', height: '2rem', color: '#9ca3af', marginRight: '0.75rem' }} />
-                <div>
-                  <p style={{ fontSize: '0.875rem', fontWeight: '500', color: '#374151' }}>{user?.nombre}</p>
-                  <p style={{ fontSize: '0.75rem', color: '#6b7280' }}>{user?.rol}</p>
-                </div>
-              </div>
-              <div>
-                <Link
-                  to="/perfil"
-                  onClick={() => setSidebarOpen(false)}
-                  style={{
-                    display: 'block',
-                    padding: '0.5rem 0.75rem',
-                    fontSize: '0.875rem',
-                    color: '#4b5563',
-                    textDecoration: 'none'
-                  }}
-                >
-                  Mi Perfil
-                </Link>
-                <button
-                  onClick={logout}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    width: '100%',
-                    padding: '0.5rem 0.75rem',
-                    fontSize: '0.875rem',
-                    color: '#4b5563',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <LogOut style={{ marginRight: '0.5rem', width: '1rem', height: '1rem' }} />
-                  Cerrar Sesión
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

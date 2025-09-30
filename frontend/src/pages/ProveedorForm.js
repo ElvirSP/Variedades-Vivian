@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft, X } from 'lucide-react';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -182,6 +182,7 @@ const ProveedorForm = () => {
                 onClick={() => navigate('/proveedores')}
                 className="btn btn-outline"
               >
+                <X className="h-4 w-4 mr-2" />
                 Cancelar
               </button>
               <button

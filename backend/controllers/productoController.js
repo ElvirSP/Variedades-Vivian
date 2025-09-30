@@ -18,11 +18,11 @@ const obtenerProductos = async (req, res) => {
       ];
     }
 
-    if (categoria_id) {
+    if (categoria_id && categoria_id !== '') {
       filtros.categoria_id = categoria_id;
     }
 
-    if (activo !== undefined) {
+    if (activo !== undefined && activo !== '') {
       filtros.activo = activo === 'true';
     }
 

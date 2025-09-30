@@ -98,16 +98,18 @@ const Proveedores = () => {
                         </span>
                       </td>
                       <td>
-                        <div className="flex space-x-2">
+                        <div className="flex items-center space-x-3">
                           <Link
                             to={`/proveedores/${proveedor.id}/editar`}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="action-btn edit"
+                            title="Editar proveedor"
                           >
                             <Edit className="h-4 w-4" />
                           </Link>
                           <button
                             onClick={() => handleEliminar(proveedor.id)}
-                            className="text-red-600 hover:text-red-900"
+                            className="action-btn delete"
+                            title="Eliminar proveedor"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>

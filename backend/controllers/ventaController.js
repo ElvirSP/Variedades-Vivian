@@ -44,7 +44,13 @@ const obtenerVentas = async (req, res) => {
       ];
     }
 
-    const { count, rows: ventas } = await Venta.findAndCountAll({
+    // Primero obtener el conteo sin includes para evitar duplicados
+    const totalVentas = await Venta.count({
+      where: filtros
+    });
+
+    // Luego obtener las ventas con includes
+    const ventas = await Venta.findAll({
       where: filtros,
       include: [
         { 
@@ -74,10 +80,10 @@ const obtenerVentas = async (req, res) => {
       data: {
         ventas,
         paginacion: {
-          total: count,
+          total: totalVentas,
           pagina: parseInt(pagina),
           limite: parseInt(limite),
-          totalPaginas: Math.ceil(count / limite)
+          totalPaginas: Math.ceil(totalVentas / limite)
         }
       }
     });

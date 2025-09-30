@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Plus, Search, Edit, Trash2, AlertTriangle } from 'lucide-react';
@@ -11,12 +11,67 @@ const Productos = () => {
     categoria_id: '',
     activo: ''
   });
+  
+  // Estado separado para el input de búsqueda (para debouncing)
+  const [busquedaInput, setBusquedaInput] = useState('');
+  const [buscando, setBuscando] = useState(false);
+  const [ultimaBusqueda, setUltimaBusqueda] = useState('');
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['productos', filtros],
     queryFn: () => api.get('/productos', { params: filtros }).then(res => res.data.data),
     keepPreviousData: true,
+    staleTime: 30000, // Los datos se consideran frescos por 30 segundos
+    refetchOnWindowFocus: false, // No refetch al cambiar de ventana
   });
+
+  // Obtener categorías para el filtro
+  const { data: categoriasData } = useQuery({
+    queryKey: ['categorias'],
+    queryFn: () => api.get('/categorias').then(res => res.data.data.categorias),
+  });
+
+  // Debouncing inteligente para la búsqueda
+  useEffect(() => {
+    // Si el campo está vacío, buscar inmediatamente
+    if (busquedaInput === '') {
+      setFiltros(prev => ({
+        ...prev,
+        busqueda: ''
+      }));
+      setBuscando(false);
+      setUltimaBusqueda('');
+      return;
+    }
+
+    // Si está escribiendo (texto más largo), usar debouncing
+    if (busquedaInput.length > ultimaBusqueda.length) {
+      setBuscando(true);
+      const timeoutId = setTimeout(() => {
+        setFiltros(prev => ({
+          ...prev,
+          busqueda: busquedaInput
+        }));
+        setBuscando(false);
+        setUltimaBusqueda(busquedaInput);
+      }, 300); // Debouncing más corto para escritura
+
+      return () => {
+        clearTimeout(timeoutId);
+        setBuscando(false);
+      };
+    }
+
+    // Si está borrando, buscar inmediatamente
+    if (busquedaInput.length < ultimaBusqueda.length) {
+      setFiltros(prev => ({
+        ...prev,
+        busqueda: busquedaInput
+      }));
+      setBuscando(false);
+      setUltimaBusqueda(busquedaInput);
+    }
+  }, [busquedaInput, ultimaBusqueda]);
 
   const handleEliminar = async (id) => {
     if (window.confirm('¿Estás seguro de que quieres eliminar este producto?')) {
@@ -31,13 +86,22 @@ const Productos = () => {
   };
 
   const handleFiltroChange = (e) => {
-    setFiltros({
-      ...filtros,
-      [e.target.name]: e.target.value
-    });
+    const { name, value } = e.target;
+    
+    if (name === 'busqueda') {
+      // Para búsqueda, usar el estado separado para debouncing
+      setBusquedaInput(value);
+    } else {
+      // Para otros filtros, actualizar inmediatamente
+      setFiltros({
+        ...filtros,
+        [name]: value
+      });
+    }
   };
 
-  if (isLoading) {
+  // Solo mostrar loading completo si es la carga inicial, no durante búsquedas
+  if (isLoading && !data) {
     return (
       <div className="loading">
         <div className="spinner"></div>
@@ -72,33 +136,47 @@ const Productos = () => {
             <div>
               <label className="form-label">Buscar</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                {buscando ? (
+                  <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                  </div>
+                ) : (
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                )}
                 <input
                   type="text"
                   name="busqueda"
                   className="form-input pl-10"
                   placeholder="Nombre, código o descripción..."
-                  value={filtros.busqueda}
+                  value={busquedaInput}
                   onChange={handleFiltroChange}
                 />
               </div>
             </div>
             <div>
-              <label className="form-label">Estado</label>
+              <label className="form-label">Categoría</label>
               <select
-                name="activo"
+                name="categoria_id"
                 className="form-select"
-                value={filtros.activo}
+                value={filtros.categoria_id}
                 onChange={handleFiltroChange}
               >
-                <option value="">Todos</option>
-                <option value="true">Activos</option>
-                <option value="false">Inactivos</option>
+                <option value="">Todas las categorías</option>
+                {categoriasData?.map((categoria) => (
+                  <option key={categoria.id} value={categoria.id}>
+                    {categoria.nombre}
+                  </option>
+                ))}
               </select>
             </div>
             <div className="flex items-end">
               <button
-                onClick={() => setFiltros({ busqueda: '', categoria_id: '', activo: '' })}
+                onClick={() => {
+                  setFiltros({ busqueda: '', categoria_id: '', activo: '' });
+                  setBusquedaInput('');
+                  setBuscando(false);
+                  setUltimaBusqueda('');
+                }}
                 className="btn btn-outline w-full"
               >
                 Limpiar Filtros
@@ -116,11 +194,10 @@ const Productos = () => {
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Código</th>
                     <th>Nombre</th>
                     <th>Categoría</th>
-                    <th>Precio Compra</th>
-                    <th>Precio Venta</th>
+                    <th>Precio Compra (Q)</th>
+                    <th>Precio Venta (Q)</th>
                     <th>Stock</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -129,7 +206,6 @@ const Productos = () => {
                 <tbody>
                   {data.productos.map((producto) => (
                     <tr key={producto.id}>
-                      <td className="font-mono text-sm">{producto.codigo}</td>
                       <td>
                         <div>
                           <div className="font-medium text-gray-900">{producto.nombre}</div>
@@ -144,20 +220,18 @@ const Productos = () => {
                         </span>
                       </td>
                       <td className="text-sm text-gray-900">
-                        ${producto.precio_compra.toLocaleString()}
+                        Q{producto.precio_compra.toLocaleString()}
                       </td>
                       <td className="text-sm text-gray-900">
-                        ${producto.precio_venta.toLocaleString()}
+                        Q{producto.precio_venta.toLocaleString()}
                       </td>
                       <td>
                         <div className="flex items-center">
-                          <span className={`text-sm font-medium ${
-                            producto.stock <= producto.stock_minimo ? 'text-red-600' : 'text-gray-900'
-                          }`}>
+                          <span className="text-sm font-medium text-gray-900">
                             {producto.stock}
                           </span>
                           {producto.stock <= producto.stock_minimo && (
-                            <AlertTriangle className="ml-1 h-4 w-4 text-red-500" />
+                            <AlertTriangle className="ml-2 h-4 w-4 text-yellow-500" />
                           )}
                         </div>
                       </td>
@@ -171,16 +245,18 @@ const Productos = () => {
                         </span>
                       </td>
                       <td>
-                        <div className="flex space-x-2">
+                        <div className="flex items-center space-x-3">
                           <Link
                             to={`/productos/${producto.id}/editar`}
-                            className="text-blue-600 hover:text-blue-900"
+                            className="action-btn edit"
+                            title="Editar producto"
                           >
                             <Edit className="h-4 w-4" />
                           </Link>
                           <button
                             onClick={() => handleEliminar(producto.id)}
-                            className="text-red-600 hover:text-red-900"
+                            className="action-btn delete"
+                            title="Eliminar producto"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>

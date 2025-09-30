@@ -1,15 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Plus, Calendar, Eye } from 'lucide-react';
+import { Plus, Calendar, Eye, Search, X } from 'lucide-react';
 import { api } from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const Ventas = () => {
+  const [filtros, setFiltros] = useState({
+    fechaInicio: '',
+    fechaFin: ''
+  });
+
+  // Convertir filtros para el backend
+  const paramsBackend = {
+    fecha_desde: filtros.fechaInicio || undefined,
+    fecha_hasta: filtros.fechaFin || undefined,
+    limite: 100 // Aumentar el límite para mostrar más resultados
+  };
+
   const { data, isLoading } = useQuery({
-    queryKey: ['ventas'],
-    queryFn: () => api.get('/ventas').then(res => res.data.data)
+    queryKey: ['ventas', filtros],
+    queryFn: () => api.get('/ventas', { params: paramsBackend }).then(res => res.data.data)
   });
 
   if (isLoading) {
@@ -19,6 +31,20 @@ const Ventas = () => {
       </div>
     );
   }
+
+  const handleFiltroChange = (e) => {
+    setFiltros({
+      ...filtros,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const limpiarFiltros = () => {
+    setFiltros({
+      fechaInicio: '',
+      fechaFin: ''
+    });
+  };
 
   const getEstadoColor = (estado) => {
     switch (estado) {
@@ -48,6 +74,49 @@ const Ventas = () => {
             <Plus className="h-4 w-4 mr-2" />
             Nueva Venta
           </Link>
+        </div>
+      </div>
+
+      {/* Filtros de fecha */}
+      <div className="card mb-6">
+        <div className="card-body">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="form-label">Fecha Inicio</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="date"
+                  name="fechaInicio"
+                  className="form-input pl-10"
+                  value={filtros.fechaInicio}
+                  onChange={handleFiltroChange}
+                />
+              </div>
+            </div>
+            <div>
+              <label className="form-label">Fecha Fin</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="date"
+                  name="fechaFin"
+                  className="form-input pl-10"
+                  value={filtros.fechaFin}
+                  onChange={handleFiltroChange}
+                />
+              </div>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={limpiarFiltros}
+                className="btn btn-outline w-full"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Limpiar Filtros
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -81,10 +150,10 @@ const Ventas = () => {
                         </div>
                       </td>
                       <td className="text-sm font-medium text-gray-900">
-                        ${parseFloat(venta.subtotal).toLocaleString()}
+                        Q{parseFloat(venta.subtotal).toLocaleString()}
                       </td>
                       <td className="text-sm font-semibold text-gray-900">
-                        ${parseFloat(venta.total).toLocaleString()}
+                        Q{parseFloat(venta.total).toLocaleString()}
                       </td>
                       <td>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getEstadoColor(venta.estado)}`}>
@@ -117,13 +186,21 @@ const Ventas = () => {
         </div>
       </div>
 
-      {/* Paginación */}
-      {data?.paginacion && data.paginacion.totalPaginas > 1 && (
+      {/* Información de resultados */}
+      {data?.ventas && data.ventas.length > 0 && (
         <div className="mt-6 flex items-center justify-between">
           <div className="text-sm text-gray-700">
-            Mostrando {((data.paginacion.pagina - 1) * data.paginacion.limite) + 1} a{' '}
-            {Math.min(data.paginacion.pagina * data.paginacion.limite, data.paginacion.total)} de{' '}
-            {data.paginacion.total} resultados
+            {data.paginacion ? (
+              <>
+                Mostrando {((data.paginacion.pagina - 1) * data.paginacion.limite) + 1} a{' '}
+                {Math.min(data.paginacion.pagina * data.paginacion.limite, data.paginacion.total)} de{' '}
+                {data.paginacion.total} resultados
+              </>
+            ) : (
+              <>
+                Mostrando {data.ventas.length} resultado{data.ventas.length !== 1 ? 's' : ''}
+              </>
+            )}
           </div>
         </div>
       )}

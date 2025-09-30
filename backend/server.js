@@ -26,10 +26,11 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet());
 app.use(cors());
 
-// Rate limiting
+// Rate limiting - Configuración más permisiva para desarrollo
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100
+  windowMs: 1 * 60 * 1000, // 1 minuto
+  max: 100, // 100 solicitudes por minuto
+  message: 'Demasiadas solicitudes desde esta IP, por favor intenta nuevamente en un momento.'
 });
 app.use(limiter);
 
@@ -63,47 +64,47 @@ const startServer = async () => {
     await crearUsuarioInicial();
     
     app.listen(PORT, () => {
-      console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-      console.log('📚 Rutas disponibles:');
-      console.log('🔐 AUTENTICACIÓN:');
+      console.log(`Servidor corriendo en http://localhost:${PORT}`);
+      console.log('Rutas disponibles:');
+      console.log('AUTENTICACIÓN:');
       console.log('   POST /api/auth/login - Iniciar sesión');
       console.log('   GET  /api/auth/perfil - Obtener perfil');
       console.log('   PUT  /api/auth/perfil - Actualizar perfil');
       console.log('   PUT  /api/auth/cambiar-password - Cambiar contraseña');
-      console.log('📦 PRODUCTOS:');
+      console.log('PRODUCTOS:');
       console.log('   GET  /api/productos - Listar productos');
       console.log('   GET  /api/productos/stock-bajo - Productos con stock bajo');
       console.log('   GET  /api/productos/:id - Obtener producto');
       console.log('   POST /api/productos - Crear producto');
       console.log('   PUT  /api/productos/:id - Actualizar producto');
       console.log('   DELETE /api/productos/:id - Eliminar producto');
-      console.log('🏷️  CATEGORÍAS:');
+      console.log('CATEGORÍAS:');
       console.log('   GET  /api/categorias - Listar categorías');
       console.log('   GET  /api/categorias/:id - Obtener categoría');
       console.log('   POST /api/categorias - Crear categoría');
       console.log('   PUT  /api/categorias/:id - Actualizar categoría');
       console.log('   DELETE /api/categorias/:id - Eliminar categoría');
-      console.log('🏢 PROVEEDORES:');
+      console.log('PROVEEDORES:');
       console.log('   GET  /api/proveedores - Listar proveedores');
       console.log('   GET  /api/proveedores/:id - Obtener proveedor');
       console.log('   POST /api/proveedores - Crear proveedor');
       console.log('   PUT  /api/proveedores/:id - Actualizar proveedor');
       console.log('   DELETE /api/proveedores/:id - Eliminar proveedor');
-      console.log('💰 VENTAS:');
+      console.log('VENTAS:');
       console.log('   GET  /api/ventas - Listar ventas');
       console.log('   GET  /api/ventas/estadisticas - Estadísticas de ventas');
       console.log('   GET  /api/ventas/:id - Obtener venta');
       console.log('   POST /api/ventas - Crear venta');
       console.log('   PATCH /api/ventas/:id/estado - Cambiar estado');
       console.log('   DELETE /api/ventas/:id - Eliminar venta');
-      console.log('🔄 DEVOLUCIONES:');
+      console.log('DEVOLUCIONES:');
       console.log('   GET  /api/devoluciones - Listar devoluciones');
       console.log('   GET  /api/devoluciones/:id - Obtener devolución');
       console.log('   POST /api/devoluciones - Crear devolución');
       console.log('   PATCH /api/devoluciones/:id/procesar - Procesar devolución');
       console.log('   PATCH /api/devoluciones/:id/estado - Cambiar estado');
       console.log('   DELETE /api/devoluciones/:id - Eliminar devolución');
-      console.log('📊 DASHBOARD:');
+      console.log('DASHBOARD:');
       console.log('   GET  /api/dashboard/resumen - Resumen del dashboard');
       console.log('   GET  /api/dashboard/estadisticas - Estadísticas por período');
       console.log('   GET  /api/dashboard/graficos - Gráficos para dashboard');
