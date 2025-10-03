@@ -107,7 +107,40 @@ const CategoriaForm = () => {
               <input
                 type="text"
                 className={`form-input ${errors.nombre ? 'error' : ''}`}
-                {...register('nombre', { required: 'El nombre es requerido' })}
+                {...register('nombre', { 
+                  required: 'El nombre es requerido',
+                  minLength: {
+                    value: 2,
+                    message: 'El nombre debe tener al menos 2 caracteres'
+                  },
+                  maxLength: {
+                    value: 50,
+                    message: 'El nombre no puede exceder 50 caracteres'
+                  },
+                    pattern: {
+                      value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-&.()]+$/,
+                      message: 'El nombre contiene caracteres no válidos'
+                    },
+                    validate: async (value) => {
+                      if (isEditing && categoria && categoria.nombre === value) {
+                        return true; // No validar si es el mismo nombre
+                      }
+                      
+                      try {
+                        const url = isEditing && categoria 
+                          ? `/categorias/verificar-nombre?nombre=${encodeURIComponent(value)}&id=${categoria.id}`
+                          : `/categorias/verificar-nombre?nombre=${encodeURIComponent(value)}`;
+                        const response = await api.get(url);
+                        if (response.data.data.exists) {
+                          return 'Ya existe una categoría con este nombre';
+                        }
+                      } catch (error) {
+                        // Si hay error en la verificación, permitir continuar
+                        console.warn('Error verificando nombre duplicado:', error);
+                      }
+                      return true;
+                    }
+                })}
               />
               {errors.nombre && (
                 <p className="form-error">{errors.nombre.message}</p>

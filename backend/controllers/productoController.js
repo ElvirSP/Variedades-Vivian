@@ -13,7 +13,6 @@ const obtenerProductos = async (req, res) => {
     if (busqueda) {
       filtros[Op.or] = [
         { nombre: { [Op.like]: `%${busqueda}%` } },
-        { codigo: { [Op.like]: `%${busqueda}%` } },
         { descripcion: { [Op.like]: `%${busqueda}%` } }
       ];
     }
@@ -134,15 +133,7 @@ const crearProducto = async (req, res) => {
       }
     }
 
-    // Generar código automático
-    const ultimoProducto = await Producto.findOne({
-      order: [['id', 'DESC']]
-    });
-    const siguienteNumero = ultimoProducto ? ultimoProducto.id + 1 : 1;
-    const codigo = `PROD-${String(siguienteNumero).padStart(4, '0')}`;
-
     const producto = await Producto.create({
-      codigo,
       nombre,
       descripcion,
       precio_compra: parseFloat(precio_compra),
@@ -182,7 +173,6 @@ const actualizarProducto = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      codigo,
       nombre,
       descripcion,
       precio_compra,
@@ -203,18 +193,6 @@ const actualizarProducto = async (req, res) => {
       });
     }
 
-    // Verificar si el código ya existe en otro producto
-    if (codigo && codigo !== producto.codigo) {
-      const productoExistente = await Producto.findOne({ 
-        where: { codigo, id: { [Op.ne]: id } } 
-      });
-      if (productoExistente) {
-        return res.status(400).json({
-          success: false,
-          message: 'Ya existe otro producto con este código'
-        });
-      }
-    }
 
     // Verificar que la categoría existe
     if (categoria_id) {
@@ -240,7 +218,6 @@ const actualizarProducto = async (req, res) => {
 
     // Actualizar producto
     await producto.update({
-      codigo: codigo || producto.codigo,
       nombre: nombre || producto.nombre,
       descripcion: descripcion !== undefined ? descripcion : producto.descripcion,
       precio_compra: precio_compra !== undefined ? parseFloat(precio_compra) : producto.precio_compra,
@@ -358,7 +335,6 @@ const obtenerProductosPorCategoria = async (req, res) => {
     if (busqueda) {
       filtros[Op.or] = [
         { nombre: { [Op.like]: `%${busqueda}%` } },
-        { codigo: { [Op.like]: `%${busqueda}%` } },
         { descripcion: { [Op.like]: `%${busqueda}%` } }
       ];
     }
@@ -385,6 +361,45 @@ const obtenerProductosPorCategoria = async (req, res) => {
   }
 };
 
+// Verificar si un nombre de producto ya existe
+const verificarNombreProducto = async (req, res) => {
+  try {
+    const { nombre } = req.query;
+    const { id } = req.query; // Para excluir el producto actual en edición
+
+    if (!nombre) {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre es requerido'
+      });
+    }
+
+    const filtros = { nombre: nombre.trim() };
+    
+    // Si se está editando un producto, excluir su propio ID
+    if (id) {
+      filtros.id = { [Op.ne]: id };
+    }
+
+    const productoExistente = await Producto.findOne({ where: filtros });
+
+    res.json({
+      success: true,
+      data: {
+        exists: !!productoExistente,
+        producto: productoExistente ? { id: productoExistente.id, nombre: productoExistente.nombre } : null
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al verificar nombre de producto:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   obtenerProductos,
   obtenerProducto,
@@ -392,5 +407,6 @@ module.exports = {
   actualizarProducto,
   eliminarProducto,
   obtenerProductosStockBajo,
-  obtenerProductosPorCategoria
+  obtenerProductosPorCategoria,
+  verificarNombreProducto
 };

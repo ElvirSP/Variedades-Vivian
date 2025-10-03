@@ -46,10 +46,10 @@ const Login = () => {
             <Package className="h-8 w-8 text-white" />
           </div>
           <h1 className="login-title">
-            Tienda de Variedades
+            Variedades Vivian
           </h1>
           <p className="login-subtitle">
-            Sistema de Gestión
+            Sistema de Gestión de Inventario
           </p>
         </div>
         
@@ -75,22 +75,35 @@ const Login = () => {
             <label htmlFor="password" className="form-label">
               Contraseña
             </label>
-            <div className="relative">
+            <div style={{ position: 'relative', display: 'block' }}>
               <input
                 id="password"
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
-                className="form-input pr-12"
+                className="form-input"
+                style={{ paddingRight: '3rem' }}
                 placeholder="Ingresa tu contraseña"
                 value={formData.password}
                 onChange={handleChange}
               />
               <button
                 type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-secondary-400 hover:text-secondary-600 transition-colors"
                 onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '0',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  padding: '0 0.75rem',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#9ca3af',
+                  display: 'flex',
+                  alignItems: 'center'
+                }}
               >
                 {showPassword ? (
                   <EyeOff className="h-5 w-5" />
@@ -101,26 +114,30 @@ const Login = () => {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary btn-lg w-full"
-          >
-            {loading ? (
-              <div className="spinner"></div>
-            ) : (
-              'Iniciar Sesión'
-            )}
-          </button>
+          <div className="text-center mb-4">
+            <button
+              type="button"
+              onClick={() => toast.info('Por favor, contacta al administrador para restablecer tu contraseña')}
+              className="text-sm text-primary-600 hover:text-primary-700 transition-colors bg-transparent border-0"
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              ¿Olvidaste tu contraseña? (Falta implementar)
+            </button>
+          </div>
 
-          <div className="login-credentials">
-            <div className="login-credentials-title">
-              Credenciales de prueba
-            </div>
-            <div className="login-credentials-text">
-              <div><strong>Usuario:</strong> admin@tienda.com</div>
-              <div><strong>Contraseña:</strong> admin123</div>
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn btn-primary btn-lg"
+              style={{ minWidth: '200px', maxWidth: '300px' }}
+            >
+              {loading ? (
+                <div className="spinner"></div>
+              ) : (
+                'Iniciar Sesión'
+              )}
+            </button>
           </div>
         </form>
       </div>

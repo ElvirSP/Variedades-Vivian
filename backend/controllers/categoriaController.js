@@ -207,10 +207,50 @@ const eliminarCategoria = async (req, res) => {
   }
 };
 
+// Verificar si un nombre de categoría ya existe
+const verificarNombreCategoria = async (req, res) => {
+  try {
+    const { nombre } = req.query;
+    const { id } = req.query; // Para excluir la categoría actual en edición
+
+    if (!nombre) {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre es requerido'
+      });
+    }
+
+    const filtros = { nombre: nombre.trim() };
+    
+    // Si se está editando una categoría, excluir su propio ID
+    if (id) {
+      filtros.id = { [Op.ne]: id };
+    }
+
+    const categoriaExistente = await Categoria.findOne({ where: filtros });
+
+    res.json({
+      success: true,
+      data: {
+        exists: !!categoriaExistente,
+        categoria: categoriaExistente ? { id: categoriaExistente.id, nombre: categoriaExistente.nombre } : null
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al verificar nombre de categoría:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   obtenerCategorias,
   obtenerCategoria,
   crearCategoria,
   actualizarCategoria,
-  eliminarCategoria
+  eliminarCategoria,
+  verificarNombreCategoria
 };

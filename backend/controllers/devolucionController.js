@@ -64,7 +64,7 @@ const obtenerDevoluciones = async (req, res) => {
         {
           model: Producto,
           as: 'producto',
-          attributes: ['id', 'nombre', 'codigo']
+          attributes: ['id', 'nombre']
         }
       ],
       limit: parseInt(limite),
@@ -109,12 +109,12 @@ const obtenerDevolucion = async (req, res) => {
         {
           model: Venta,
           as: 'venta',
-          attributes: ['id', 'numero_factura', 'fecha', 'total']
+          attributes: ['id', 'fecha', 'total']
         },
         {
           model: Producto,
           as: 'producto',
-          attributes: ['id', 'nombre', 'codigo', 'precio_venta']
+          attributes: ['id', 'nombre', 'precio_venta']
         }
       ]
     });
@@ -199,11 +199,32 @@ const crearDevolucion = async (req, res) => {
     }
 
     const cantidadVendida = detalleVenta.cantidad;
-    if (cantidad > cantidadVendida) {
+    
+    // Calcular cuántas unidades ya se han devuelto de este producto en esta venta
+    const devolucionesPrevias = await Devolucion.findAll({
+      where: {
+        venta_id: venta_id,
+        producto_id: producto_id
+      },
+      attributes: ['cantidad']
+    });
+    
+    const cantidadYaDevuelta = devolucionesPrevias.reduce((total, dev) => total + dev.cantidad, 0);
+    const cantidadDisponibleParaDevolver = cantidadVendida - cantidadYaDevuelta;
+    
+    if (cantidad > cantidadDisponibleParaDevolver) {
       await transaction.rollback();
       return res.status(400).json({
         success: false,
-        message: `La cantidad a devolver (${cantidad}) no puede ser mayor a la vendida (${cantidadVendida})`
+        message: `La cantidad a devolver (${cantidad}) no puede ser mayor a la disponible (${cantidadDisponibleParaDevolver}). Ya se han devuelto ${cantidadYaDevuelta} de ${cantidadVendida} unidades vendidas.`
+      });
+    }
+    
+    if (cantidadDisponibleParaDevolver === 0) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        message: `No hay unidades disponibles para devolver. Ya se han devuelto todas las ${cantidadVendida} unidades vendidas.`
       });
     }
 
@@ -235,7 +256,7 @@ const crearDevolucion = async (req, res) => {
         {
           model: Producto,
           as: 'producto',
-          attributes: ['id', 'nombre', 'codigo']
+          attributes: ['id', 'nombre']
         }
       ]
     });

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Calendar, User, Package, DollarSign } from 'lucide-react';
+import { ArrowLeft, Calendar, User, Package, CheckCircle } from 'lucide-react';
 import { api } from '../services/api';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -107,33 +107,32 @@ const VentaDetalle = () => {
               <h3 className="text-lg font-medium text-gray-900">Información General</h3>
             </div>
             <div className="card-body">
-              <div className="space-y-4">
+              <div className="space-y-2">
+                {/* Fecha */}
                 <div className="flex items-center">
-                  <Calendar className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Fecha</p>
-                    <p className="text-sm text-gray-500">
-                      {format(new Date(venta.fecha), 'dd/MM/yyyy HH:mm', { locale: es })}
-                    </p>
-                  </div>
+                  <Calendar className="h-5 w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <span className="text-sm text-gray-900">
+                    <span className="font-medium">Fecha:</span> {format(new Date(venta.fecha), 'dd/MM/yyyy HH:mm', { locale: es })}
+                  </span>
                 </div>
 
+                {/* Vendedor */}
                 <div className="flex items-center">
-                  <User className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Vendedor</p>
-                    <p className="text-sm text-gray-500">{venta.usuario?.nombre}</p>
-                  </div>
+                  <User className="h-5 w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <span className="text-sm text-gray-900">
+                    <span className="font-medium">Vendedor:</span> {venta.usuario?.nombre}
+                  </span>
                 </div>
 
+                {/* Estado */}
                 <div className="flex items-center">
-                  <DollarSign className="h-5 w-5 text-gray-400 mr-3" />
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">Estado</p>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getEstadoColor(venta.estado)}`}>
+                  <CheckCircle className="h-5 w-5 text-gray-400 mr-3 flex-shrink-0" />
+                  <span className="text-sm text-gray-900">
+                    <span className="font-medium">Estado:</span> 
+                    <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getEstadoColor(venta.estado)}`}>
                       {venta.estado}
                     </span>
-                  </div>
+                  </span>
                 </div>
 
                 {venta.observaciones && (
@@ -153,7 +152,6 @@ const VentaDetalle = () => {
             </div>
             <div className="card-body">
               <div className="space-y-3">
-                
                 <div className="flex justify-between border-t pt-3">
                   <span className="text-sm font-semibold text-gray-900">Total:</span>
                   <span className="text-lg font-bold text-gray-900">Q{parseFloat(venta.total).toLocaleString()}</span>
@@ -176,7 +174,6 @@ const VentaDetalle = () => {
                     <thead>
                       <tr>
                         <th>Producto</th>
-                        <th>Código</th>
                         <th>Cantidad</th>
                         <th>Precio Unitario</th>
                         <th>Subtotal</th>
@@ -189,9 +186,6 @@ const VentaDetalle = () => {
                             <div className="font-medium text-gray-900">
                               {detalle.producto?.nombre}
                             </div>
-                          </td>
-                          <td className="font-mono text-sm text-gray-500">
-                            {detalle.producto?.codigo}
                           </td>
                           <td className="text-center">
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

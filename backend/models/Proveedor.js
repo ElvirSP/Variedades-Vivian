@@ -21,13 +21,24 @@ const Proveedor = sequelize.define('Proveedor', {
   },
   telefono: {
     type: DataTypes.STRING(20),
-    allowNull: true
+    allowNull: true,
+    validate: {
+      isValidPhone(value) {
+        if (value && value.trim() !== '' && !/^(\+502[\s\-]?)?[2-9][0-9]{3}[\s\-]?[0-9]{4}$/.test(value)) {
+          throw new Error('Debe ser un teléfono guatemalteco válido');
+        }
+      }
+    }
   },
   email: {
     type: DataTypes.STRING(100),
     allowNull: true,
     validate: {
-      isEmail: true
+      isValidEmail(value) {
+        if (value && value.trim() !== '' && !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(value)) {
+          throw new Error('Debe ser un email válido');
+        }
+      }
     }
   },
   direccion: {

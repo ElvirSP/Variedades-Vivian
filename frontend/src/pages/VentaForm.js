@@ -48,11 +48,31 @@ const VentaForm = () => {
   const agregarProducto = (producto) => {
     const productoExistente = productosEnVenta.find(p => p.producto_id === producto.id);
     
+    // Validar stock disponible
+    if (producto.stock <= 0) {
+      toast.error(`${producto.nombre} no tiene stock disponible`);
+      return;
+    }
+    
+    // Alerta de stock crítico
+    if (producto.stock <= producto.stock_minimo) {
+      toast.error(`${producto.nombre} tiene stock crítico (${producto.stock} unidades). Stock mínimo: ${producto.stock_minimo}`, {
+        duration: 6000,
+      });
+    }
+    
     if (productoExistente) {
+      // Verificar si se puede agregar más cantidad
+      const nuevaCantidad = productoExistente.cantidad + 1;
+      if (nuevaCantidad > producto.stock) {
+        toast.error(`No se puede agregar más. Stock disponible: ${producto.stock}`);
+        return;
+      }
+      
       // Si ya existe, aumentar la cantidad
       setProductosEnVenta(productosEnVenta.map(p => 
         p.producto_id === producto.id 
-          ? { ...p, cantidad: p.cantidad + 1 }
+          ? { ...p, cantidad: nuevaCantidad }
           : p
       ));
     } else {
@@ -62,7 +82,6 @@ const VentaForm = () => {
         cantidad: 1,
         precio_unitario: producto.precio_venta,
         nombre: producto.nombre,
-        codigo: producto.codigo,
         stock_disponible: producto.stock
       }]);
     }
@@ -73,6 +92,13 @@ const VentaForm = () => {
   const actualizarCantidad = (productoId, nuevaCantidad) => {
     if (nuevaCantidad <= 0) {
       eliminarProducto(productoId);
+      return;
+    }
+
+    // Buscar el producto en la lista de productos disponibles para obtener el stock
+    const productoDisponible = productosData?.find(p => p.id === productoId);
+    if (productoDisponible && nuevaCantidad > productoDisponible.stock) {
+      toast.error(`No se puede vender más de ${productoDisponible.stock} unidades de ${productoDisponible.nombre}`);
       return;
     }
 
@@ -97,6 +123,33 @@ const VentaForm = () => {
     if (productosEnVenta.length === 0) {
       toast.error('Debe agregar al menos un producto');
       return;
+    }
+
+    // Verificar stock crítico antes de procesar la venta
+    const productosConStockCritico = [];
+    productosEnVenta.forEach(ventaProducto => {
+      const productoDisponible = productosData?.find(p => p.id === ventaProducto.producto_id);
+      if (productoDisponible) {
+        const stockRestante = productoDisponible.stock - ventaProducto.cantidad;
+        if (stockRestante <= productoDisponible.stock_minimo && stockRestante >= 0) {
+          productosConStockCritico.push({
+            nombre: productoDisponible.nombre,
+            stockRestante,
+            stockMinimo: productoDisponible.stock_minimo
+          });
+        }
+      }
+    });
+
+    // Si hay productos con stock crítico, mostrar confirmación
+    if (productosConStockCritico.length > 0) {
+      const mensaje = `ADVERTENCIA: Los siguientes productos quedarán con stock crítico después de la venta:\n\n${productosConStockCritico.map(p => 
+        `• ${p.nombre}: ${p.stockRestante} unidades (mínimo: ${p.stockMinimo})`
+      ).join('\n')}\n\n¿Desea continuar con la venta?`;
+      
+      if (!window.confirm(mensaje)) {
+        return;
+      }
     }
 
     const ventaData = {
@@ -189,26 +242,50 @@ const VentaForm = () => {
                         </div>
                       ) : productosData && productosData.length > 0 ? (
                         <div className="divide-y divide-gray-200">
-                          {productosData.map((producto) => (
-                            <div key={producto.id} className="p-3 hover:bg-gray-50">
-                              <div className="flex items-center justify-between">
-                                <div className="flex-1">
-                                  <div className="font-medium text-gray-900">{producto.nombre}</div>
-                                  <div className="text-sm text-gray-500">
-                                    Código: {producto.codigo} | Stock: {producto.stock} | Precio: Q{producto.precio_venta.toLocaleString()}
+                          {productosData.map((producto) => {
+                            const stockCritico = producto.stock <= producto.stock_minimo;
+                            const sinStock = producto.stock <= 0;
+                            
+                            return (
+                              <div key={producto.id} className={`p-3 hover:bg-gray-50 ${stockCritico ? 'border-l-4 border-red-400' : ''}`}>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2">
+                                      <div className="font-medium text-gray-900">{producto.nombre}</div>
+                                      {stockCritico && (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                          Stock Crítico
+                                        </span>
+                                      )}
+                                      {sinStock && (
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                          Sin Stock
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-sm text-gray-500">
+                                      <span className={stockCritico ? 'text-red-600 font-medium' : ''}>
+                                        Stock: {producto.stock}
+                                      </span>
+                                      {producto.stock_minimo && (
+                                        <span className="text-gray-400"> (mín: {producto.stock_minimo})</span>
+                                      )}
+                                      | Precio: Q{producto.precio_venta.toLocaleString()}
+                                    </div>
                                   </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => agregarProducto(producto)}
+                                    disabled={sinStock}
+                                    className={`btn btn-sm ${sinStock ? 'btn-outline opacity-50 cursor-not-allowed' : 'btn-primary'}`}
+                                  >
+                                    <Plus className="h-4 w-4 mr-1" />
+                                    {sinStock ? 'Sin Stock' : 'Agregar'}
+                                  </button>
                                 </div>
-                                <button
-                                  type="button"
-                                  onClick={() => agregarProducto(producto)}
-                                  className="btn btn-primary btn-sm"
-                                >
-                                  <Plus className="h-4 w-4 mr-1" />
-                                  Agregar
-                                </button>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       ) : (
                         <div className="p-8 text-center">
@@ -259,7 +336,8 @@ const VentaForm = () => {
                         <button
                           type="button"
                           onClick={() => eliminarProducto(producto.producto_id)}
-                          className="text-red-600 hover:text-red-900"
+                          className="action-btn delete"
+                          title="Eliminar producto del carrito"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>

@@ -82,9 +82,6 @@ const Devoluciones = () => {
                           <div className="font-medium text-gray-900">
                             {devolucion.producto?.nombre}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {devolucion.producto?.codigo}
-                          </div>
                         </div>
                       </td>
                       <td className="text-sm text-gray-900">

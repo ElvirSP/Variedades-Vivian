@@ -98,7 +98,7 @@ const crearProveedor = async (req, res) => {
       nombre,
       contacto,
       telefono,
-      email,
+      email: email && email.trim() !== '' ? email : null,
       direccion,
       usuario_id: req.usuario.id
     });
@@ -155,7 +155,7 @@ const actualizarProveedor = async (req, res) => {
       nombre: nombre || proveedor.nombre,
       contacto: contacto !== undefined ? contacto : proveedor.contacto,
       telefono: telefono !== undefined ? telefono : proveedor.telefono,
-      email: email !== undefined ? email : proveedor.email,
+      email: email !== undefined ? (email.trim() === '' ? null : email) : proveedor.email,
       direccion: direccion !== undefined ? direccion : proveedor.direccion,
       activo: activo !== undefined ? activo : proveedor.activo
     });
@@ -215,10 +215,50 @@ const eliminarProveedor = async (req, res) => {
   }
 };
 
+// Verificar si un nombre de proveedor ya existe
+const verificarNombreProveedor = async (req, res) => {
+  try {
+    const { nombre } = req.query;
+    const { id } = req.query; // Para excluir el proveedor actual en edición
+
+    if (!nombre) {
+      return res.status(400).json({
+        success: false,
+        message: 'El nombre es requerido'
+      });
+    }
+
+    const filtros = { nombre: nombre.trim() };
+    
+    // Si se está editando un proveedor, excluir su propio ID
+    if (id) {
+      filtros.id = { [Op.ne]: id };
+    }
+
+    const proveedorExistente = await Proveedor.findOne({ where: filtros });
+
+    res.json({
+      success: true,
+      data: {
+        exists: !!proveedorExistente,
+        proveedor: proveedorExistente ? { id: proveedorExistente.id, nombre: proveedorExistente.nombre } : null
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al verificar nombre de proveedor:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 module.exports = {
   obtenerProveedores,
   obtenerProveedor,
   crearProveedor,
   actualizarProveedor,
-  eliminarProveedor
+  eliminarProveedor,
+  verificarNombreProveedor
 };

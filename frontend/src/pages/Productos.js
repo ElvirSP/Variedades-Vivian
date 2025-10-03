@@ -73,14 +73,22 @@ const Productos = () => {
     }
   }, [busquedaInput, ultimaBusqueda]);
 
-  const handleEliminar = async (id) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este producto?')) {
+  const handleEliminar = async (id, producto) => {
+    let mensaje = `¿Estás seguro de que quieres eliminar el producto "${producto.nombre}"?`;
+    
+    if (producto.stock > 0) {
+      mensaje += `\n\nADVERTENCIA: Este producto tiene ${producto.stock} unidades en stock. Al eliminarlo, se perderá toda la información del inventario.`;
+    }
+    
+    mensaje += '\n\nEsta acción no se puede deshacer.';
+    
+    if (window.confirm(mensaje)) {
       try {
         await api.delete(`/productos/${id}`);
         toast.success('Producto eliminado exitosamente');
         refetch();
       } catch (error) {
-        toast.error('Error al eliminar el producto');
+        toast.error(error.response?.data?.message || 'Error al eliminar el producto');
       }
     }
   };
@@ -147,7 +155,7 @@ const Productos = () => {
                   type="text"
                   name="busqueda"
                   className="form-input pl-10"
-                  placeholder="Nombre, código o descripción..."
+                  placeholder="Nombre o descripción..."
                   value={busquedaInput}
                   onChange={handleFiltroChange}
                 />
@@ -226,12 +234,12 @@ const Productos = () => {
                         Q{producto.precio_venta.toLocaleString()}
                       </td>
                       <td>
-                        <div className="flex items-center">
+                        <div className="inline-flex items-baseline space-x-1">
                           <span className="text-sm font-medium text-gray-900">
                             {producto.stock}
                           </span>
                           {producto.stock <= producto.stock_minimo && (
-                            <AlertTriangle className="ml-2 h-4 w-4 text-yellow-500" />
+                            <AlertTriangle className="w-3.5 h-3.5 text-yellow-500" style={{ marginBottom: '1px' }} />
                           )}
                         </div>
                       </td>
@@ -254,7 +262,7 @@ const Productos = () => {
                             <Edit className="h-4 w-4" />
                           </Link>
                           <button
-                            onClick={() => handleEliminar(producto.id)}
+                            onClick={() => handleEliminar(producto.id, producto)}
                             className="action-btn delete"
                             title="Eliminar producto"
                           >

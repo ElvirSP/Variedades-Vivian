@@ -35,7 +35,7 @@ const Layout = ({ children }) => {
       <div className="sidebar-desktop">
         <div style={{ padding: 'var(--space-6)', borderBottom: '1px solid var(--secondary-200)' }}>
           <h1 style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--secondary-800)' }}>
-            Tienda Variedades
+            Variedades Vivian
           </h1>
         </div>
         <nav style={{ padding: 'var(--space-4)' }}>

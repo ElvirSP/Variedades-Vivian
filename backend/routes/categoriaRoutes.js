@@ -8,6 +8,7 @@ router.use(auth);
 
 // Rutas de categorías
 router.get('/', categoriaController.obtenerCategorias);
+router.get('/verificar-nombre', categoriaController.verificarNombreCategoria);
 router.get('/:id', categoriaController.obtenerCategoria);
 router.post('/', categoriaController.crearCategoria);
 router.put('/:id', categoriaController.actualizarCategoria);

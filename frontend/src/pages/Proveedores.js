@@ -11,8 +11,16 @@ const Proveedores = () => {
     queryFn: () => api.get('/proveedores').then(res => res.data.data.proveedores)
   });
 
-  const handleEliminar = async (id) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar este proveedor?')) {
+  const handleEliminar = async (id, proveedor) => {
+    let mensaje = `¿Estás seguro de que quieres eliminar el proveedor "${proveedor.nombre}"?`;
+    
+    if (proveedor.productos_count && proveedor.productos_count > 0) {
+      mensaje += `\n\nADVERTENCIA: Este proveedor tiene ${proveedor.productos_count} producto(s) asociado(s). Al eliminarlo, estos productos quedarán sin proveedor.`;
+    }
+    
+    mensaje += '\n\nEsta acción no se puede deshacer.';
+    
+    if (window.confirm(mensaje)) {
       try {
         await api.delete(`/proveedores/${id}`);
         toast.success('Proveedor eliminado exitosamente');
@@ -107,7 +115,7 @@ const Proveedores = () => {
                             <Edit className="h-4 w-4" />
                           </Link>
                           <button
-                            onClick={() => handleEliminar(proveedor.id)}
+                            onClick={() => handleEliminar(proveedor.id, proveedor)}
                             className="action-btn delete"
                             title="Eliminar proveedor"
                           >

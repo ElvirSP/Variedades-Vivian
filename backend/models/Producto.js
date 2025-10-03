@@ -7,14 +7,6 @@ const Producto = sequelize.define('Producto', {
     primaryKey: true,
     autoIncrement: true
   },
-  codigo: {
-    type: DataTypes.STRING(50),
-    allowNull: true,
-    unique: true,
-    validate: {
-      notEmpty: true
-    }
-  },
   nombre: {
     type: DataTypes.STRING(200),
     allowNull: false,

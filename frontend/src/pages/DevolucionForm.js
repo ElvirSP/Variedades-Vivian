@@ -6,6 +6,72 @@ import { Save, ArrowLeft, Calendar, Search, X } from 'lucide-react';
 import { api } from '../services/api';
 import toast from 'react-hot-toast';
 
+// Constantes para estilos
+const STYLES = {
+  cardSelected: {
+    backgroundColor: 'var(--primary-100)',
+    border: '2px solid var(--primary-600)',
+    boxShadow: 'var(--shadow-md)'
+  },
+  cardInteractive: {
+    backgroundColor: 'white',
+    border: '1px solid var(--secondary-200)',
+    boxShadow: 'var(--shadow-sm)'
+  },
+  cardDisabled: {
+    backgroundColor: 'var(--secondary-100)',
+    border: '1px solid var(--secondary-200)',
+    boxShadow: 'var(--shadow-sm)'
+  },
+  indicatorSelected: {
+    backgroundColor: 'var(--primary-600)'
+  },
+  indicatorNormal: {
+    backgroundColor: 'var(--secondary-300)'
+  },
+  textSelected: {
+    color: 'var(--primary-900)'
+  },
+  textSecondary: {
+    color: 'var(--secondary-800)'
+  },
+  textMuted: {
+    color: 'var(--secondary-600)'
+  },
+  badgeSelected: {
+    backgroundColor: 'var(--primary-200)',
+    color: 'var(--primary-800)'
+  },
+  badgeNormal: {
+    backgroundColor: 'var(--secondary-100)',
+    color: 'var(--secondary-600)'
+  },
+  badgeSuccess: {
+    backgroundColor: 'var(--success-50)',
+    color: 'var(--success-600)'
+  }
+};
+
+// Funciones helper para estilos
+const getCardStyle = (isSelected, isDisabled = false) => {
+  if (isDisabled) return STYLES.cardDisabled;
+  return isSelected ? STYLES.cardSelected : STYLES.cardInteractive;
+};
+
+const getIndicatorStyle = (isSelected) => {
+  return isSelected ? STYLES.indicatorSelected : STYLES.indicatorNormal;
+};
+
+const getTextStyle = (isSelected, type = 'primary') => {
+  if (type === 'muted') return STYLES.textMuted;
+  return isSelected ? STYLES.textSelected : STYLES.textSecondary;
+};
+
+const getBadgeStyle = (isSelected, variant = 'normal') => {
+  if (variant === 'success') return STYLES.badgeSuccess;
+  return isSelected ? STYLES.badgeSelected : STYLES.badgeNormal;
+};
+
 const DevolucionForm = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -48,7 +114,6 @@ const DevolucionForm = () => {
       return;
     }
 
-    console.log('Buscando ventas con fechas:', { fechaDesde, fechaHasta });
     buscarVentas();
   };
 
@@ -58,10 +123,10 @@ const DevolucionForm = () => {
     setValue('venta_id', venta.id);
   };
 
-  const seleccionarProducto = (producto) => {
-    setProductoSeleccionado(producto);
-    setValue('producto_id', producto.id);
-    setValue('cantidad', 1);
+  const seleccionarProducto = (detalle) => {
+    setProductoSeleccionado(detalle);
+    setValue('producto_id', detalle.producto.id);
+    setValue('cantidad', Math.min(1, detalle.cantidad_disponible_devolver));
   };
 
   const onSubmit = (data) => {
@@ -117,7 +182,7 @@ const DevolucionForm = () => {
                 />
               </div>
 
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
                   onClick={() => {
@@ -128,7 +193,8 @@ const DevolucionForm = () => {
                     setFechaDesde(hace30Dias.toISOString().split('T')[0]);
                     setFechaHasta(hoy.toISOString().split('T')[0]);
                   }}
-                  className="btn btn-outline w-full text-sm"
+                  className="btn btn-outline"
+                  style={{ height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   Últimos 30 días
                 </button>
@@ -137,7 +203,8 @@ const DevolucionForm = () => {
                   type="button"
                   onClick={buscarVentasPorFecha}
                   disabled={!fechaDesde || !fechaHasta}
-                  className="btn btn-primary w-full"
+                  className="btn btn-primary"
+                  style={{ height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
                   <Search className="h-4 w-4 mr-2" />
                   Buscar Ventas
@@ -169,29 +236,53 @@ const DevolucionForm = () => {
                 </p>
               </div>
             ) : ventasData && ventasData.length > 0 ? (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {ventasData.map((venta) => (
-                  <button
-                    key={venta.id}
-                    type="button"
-                    onClick={() => seleccionarVenta(venta)}
-                    className={`w-full text-left p-3 border rounded-lg ${
-                      ventaSeleccionada?.id === venta.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="font-medium text-gray-900">
-                      Venta #{venta.id}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {new Date(venta.fecha).toLocaleDateString()} - Q{parseFloat(venta.total).toLocaleString()}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      {venta.detalles?.length || 0} producto(s)
-                    </div>
-                  </button>
-                ))}
+              <div className="space-y-5 max-h-96 overflow-y-auto">
+                {ventasData.map((venta) => {
+                  const isSelected = ventaSeleccionada?.id === venta.id;
+                  
+                  return (
+                    <button
+                      key={venta.id}
+                      type="button"
+                      onClick={() => seleccionarVenta(venta)}
+                      className={`w-full text-left p-6 rounded-lg transition-all duration-200 ${
+                        isSelected ? 'card-selected' : 'card-interactive'
+                      }`}
+                      style={getCardStyle(isSelected)}
+                      aria-label={`Seleccionar venta ${venta.id} del ${new Date(venta.fecha).toLocaleDateString()}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={getIndicatorStyle(isSelected)}
+                            aria-hidden="true"
+                          ></div>
+                          <div>
+                            <div 
+                              className="font-semibold"
+                              style={getTextStyle(isSelected)}
+                            >
+                              Venta #{venta.id}
+                            </div>
+                            <div 
+                              className="text-sm"
+                              style={getTextStyle(isSelected, 'muted')}
+                            >
+                              {new Date(venta.fecha).toLocaleDateString()} - Q{parseFloat(venta.total).toLocaleString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div 
+                          className="text-xs font-medium px-2 py-1 rounded-full"
+                          style={getBadgeStyle(isSelected)}
+                        >
+                          {venta.detalles?.length || 0} producto(s)
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             ) : ventasData && ventasData.length === 0 ? (
               <div className="text-center py-8">
@@ -214,27 +305,67 @@ const DevolucionForm = () => {
           </div>
           <div className="card-body">
             {ventaSeleccionada ? (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {ventaSeleccionada.detalles?.map((detalle) => (
-                  <button
-                    key={detalle.id}
-                    type="button"
-                    onClick={() => seleccionarProducto(detalle.producto)}
-                    className={`w-full text-left p-3 border rounded-lg ${
-                      productoSeleccionado?.id === detalle.producto.id
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="font-medium text-gray-900">{detalle.producto.nombre}</div>
-                    <div className="text-sm text-gray-500">
-                      Cantidad: {detalle.cantidad} | Precio: Q{detalle.precio_unitario.toLocaleString()}
-                    </div>
-                    <div className="text-xs text-gray-400">
-                      Código: {detalle.producto.codigo}
-                    </div>
-                  </button>
-                ))}
+              <div className="space-y-5 max-h-96 overflow-y-auto">
+                {ventaSeleccionada.detalles?.map((detalle) => {
+                  const isSelected = productoSeleccionado?.producto?.id === detalle.producto.id;
+                  const isDisabled = detalle.cantidad_disponible_devolver === 0;
+                  
+                  return (
+                    <button
+                      key={detalle.id}
+                      type="button"
+                      onClick={() => seleccionarProducto(detalle)}
+                      disabled={isDisabled}
+                      className={`w-full text-left p-6 rounded-lg transition-all duration-200 ${
+                        isSelected ? 'card-selected' : isDisabled ? 'opacity-50 cursor-not-allowed' : 'card-interactive'
+                      }`}
+                      style={getCardStyle(isSelected, isDisabled)}
+                      aria-label={`Seleccionar producto ${detalle.producto.nombre}${isDisabled ? ' (no disponible)' : ''}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div 
+                            className="w-3 h-3 rounded-full"
+                            style={getIndicatorStyle(isSelected)}
+                            aria-hidden="true"
+                          ></div>
+                          <div className="flex-1">
+                            <div 
+                              className="font-semibold"
+                              style={getTextStyle(isSelected)}
+                            >
+                              {detalle.producto.nombre}
+                            </div>
+                            <div 
+                              className="text-sm"
+                              style={getTextStyle(isSelected, 'muted')}
+                            >
+                              Cantidad vendida: {detalle.cantidad} | Precio: Q{detalle.precio_unitario.toLocaleString()}
+                            </div>
+                            {detalle.cantidad_devuelta > 0 && (
+                              <div className="text-xs font-medium mt-1" style={{ color: 'var(--warning-600)' }}>
+                                Ya devueltas: {detalle.cantidad_devuelta} | Disponibles: {detalle.cantidad_disponible_devolver}
+                              </div>
+                            )}
+                            {isDisabled && (
+                              <div className="text-xs font-medium mt-1" style={{ color: 'var(--error-600)' }}>
+                                ⚠️ Todas las unidades ya fueron devueltas
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {!isDisabled && (
+                          <div 
+                            className="text-xs font-medium px-2 py-1 rounded-full"
+                            style={getBadgeStyle(isSelected, 'success')}
+                          >
+                            Disponible: {detalle.cantidad_disponible_devolver}
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-8">
@@ -255,34 +386,68 @@ const DevolucionForm = () => {
             <div className="card-body">
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Resumen de la selección */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Resumen de la Devolución</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Venta:</span>
-                      <div className="font-medium">#{ventaSeleccionada.id}</div>
+                <div 
+                  className="p-4 rounded-lg"
+                  style={{
+                    backgroundColor: 'var(--primary-50)',
+                    border: '1px solid var(--primary-200)'
+                  }}
+                >
+                  <h4 
+                    className="font-semibold mb-3 flex items-center"
+                    style={{ color: 'var(--primary-900)' }}
+                  >
+                    <div 
+                      className="w-2 h-2 rounded-full mr-2"
+                      style={{ backgroundColor: 'var(--primary-600)' }}
+                      aria-hidden="true"
+                    ></div>
+                    Resumen de la Devolución
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div 
+                      className="p-3 rounded-lg"
+                      style={{
+                        backgroundColor: 'white',
+                        border: '1px solid var(--primary-100)'
+                      }}
+                    >
+                      <span className="font-medium" style={{ color: 'var(--primary-600)' }}>Venta:</span>
+                      <div className="font-semibold mt-1" style={{ color: 'var(--primary-900)' }}>#{ventaSeleccionada.id}</div>
                     </div>
-                    <div>
-                      <span className="text-gray-500">Producto:</span>
-                      <div className="font-medium">{productoSeleccionado.nombre}</div>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Código:</span>
-                      <div className="font-medium">{productoSeleccionado.codigo}</div>
+                    <div 
+                      className="p-3 rounded-lg"
+                      style={{
+                        backgroundColor: 'white',
+                        border: '1px solid var(--primary-100)'
+                      }}
+                    >
+                      <span className="font-medium" style={{ color: 'var(--primary-600)' }}>Producto:</span>
+                      <div className="font-semibold mt-1" style={{ color: 'var(--primary-900)' }}>{productoSeleccionado.producto.nombre}</div>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="form-group">
-                    <label className="form-label">Cantidad a Devolver *</label>
+                    <label className="form-label">
+                      Cantidad a Devolver * 
+                      <span className="text-sm text-gray-500 ml-2">
+                        (Máximo: {productoSeleccionado.cantidad_disponible_devolver})
+                      </span>
+                    </label>
                     <input
                       type="number"
                       min="1"
+                      max={productoSeleccionado.cantidad_disponible_devolver}
                       className={`form-input ${errors.cantidad ? 'error' : ''}`}
                       {...register('cantidad', { 
                         required: 'La cantidad es requerida',
-                        min: { value: 1, message: 'La cantidad debe ser mayor a 0' }
+                        min: { value: 1, message: 'La cantidad debe ser mayor a 0' },
+                        max: { 
+                          value: productoSeleccionado.cantidad_disponible_devolver, 
+                          message: `La cantidad máxima disponible es ${productoSeleccionado.cantidad_disponible_devolver}` 
+                        }
                       })}
                     />
                     {errors.cantidad && (
@@ -298,7 +463,6 @@ const DevolucionForm = () => {
                     >
                       <option value="">Seleccionar motivo</option>
                       <option value="defectuoso">Producto Defectuoso</option>
-                      <option value="no_solicitado">No Solicitado</option>
                       <option value="cambio">Cambio</option>
                       <option value="otro">Otro</option>
                     </select>

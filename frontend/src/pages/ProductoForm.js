@@ -136,26 +136,46 @@ const ProductoForm = () => {
         <div className="card-body">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {isEditing && producto && (
-                <div className="form-group">
-                  <label className="form-label">Código del Producto</label>
-                  <input
-                    type="text"
-                    className="form-input bg-gray-100 cursor-not-allowed"
-                    value={producto.codigo || ''}
-                    readOnly
-                    disabled
-                  />
-                  <p className="text-xs text-gray-500 mt-1">El código no se puede modificar</p>
-                </div>
-              )}
 
               <div className="form-group">
                 <label className="form-label">Nombre *</label>
                 <input
                   type="text"
                   className={`form-input ${errors.nombre ? 'error' : ''}`}
-                  {...register('nombre', { required: 'El nombre es requerido' })}
+                  {...register('nombre', { 
+                    required: 'El nombre es requerido',
+                    minLength: {
+                      value: 2,
+                      message: 'El nombre debe tener al menos 2 caracteres'
+                    },
+                    maxLength: {
+                      value: 100,
+                      message: 'El nombre no puede exceder 100 caracteres'
+                    },
+                    pattern: {
+                      value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-&.()]+$/,
+                      message: 'El nombre contiene caracteres no válidos'
+                    },
+                    validate: async (value) => {
+                      if (isEditing && producto && producto.nombre === value) {
+                        return true; // No validar si es el mismo nombre
+                      }
+                      
+                      try {
+                        const url = isEditing && producto 
+                          ? `/productos/verificar-nombre?nombre=${encodeURIComponent(value)}&id=${producto.id}`
+                          : `/productos/verificar-nombre?nombre=${encodeURIComponent(value)}`;
+                        const response = await api.get(url);
+                        if (response.data.data.exists) {
+                          return 'Ya existe un producto con este nombre';
+                        }
+                      } catch (error) {
+                        // Si hay error en la verificación, permitir continuar
+                        console.warn('Error verificando nombre duplicado:', error);
+                      }
+                      return true;
+                    }
+                  })}
                 />
                 {errors.nombre && (
                   <p className="form-error">{errors.nombre.message}</p>
@@ -230,6 +250,12 @@ const ProductoForm = () => {
                           value = parts[0] + '.' + parts[1].substring(0, 2);
                         }
                         e.target.value = value;
+                        
+                        // Revalidar precio de venta si ya tiene valor
+                        const precioVenta = document.querySelector('input[name="precio_venta"]');
+                        if (precioVenta && precioVenta.value) {
+                          precioVenta.dispatchEvent(new Event('blur'));
+                        }
                       }
                     })}
                   />
@@ -260,6 +286,22 @@ const ProductoForm = () => {
                       pattern: {
                         value: /^\d+(\.\d{1,2})?$/,
                         message: 'Formato inválido (ej: 200.00)'
+                      },
+                      validate: (value) => {
+                        const precioCompra = parseFloat(document.querySelector('input[name="precio_compra"]')?.value || 0);
+                        const precioVenta = parseFloat(value);
+                        
+                        if (precioCompra > 0 && precioVenta <= precioCompra) {
+                          return 'El precio de venta debe ser mayor al precio de compra';
+                        }
+                        
+                        if (precioCompra > 0 && precioVenta < precioCompra * 1.1) {
+                          toast.warning(`Margen muy bajo (${((precioVenta - precioCompra) / precioCompra * 100).toFixed(1)}%). Se recomienda al menos 10%`, {
+                            duration: 5000,
+                          });
+                        }
+                        
+                        return true;
                       },
                       onChange: (e) => {
                         // Permitir solo números y un punto decimal

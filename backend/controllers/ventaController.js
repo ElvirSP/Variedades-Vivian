@@ -65,7 +65,7 @@ const obtenerVentas = async (req, res) => {
             {
               model: Producto,
               as: 'producto',
-              attributes: ['id', 'nombre', 'codigo']
+              attributes: ['id', 'nombre']
             }
           ]
         }
@@ -116,7 +116,7 @@ const obtenerVenta = async (req, res) => {
             {
               model: Producto,
               as: 'producto',
-              attributes: ['id', 'nombre', 'codigo', 'precio_venta']
+              attributes: ['id', 'nombre', 'precio_venta']
             }
           ]
         }
@@ -245,7 +245,7 @@ const crearVenta = async (req, res) => {
             {
               model: Producto,
               as: 'producto',
-              attributes: ['id', 'nombre', 'codigo']
+              attributes: ['id', 'nombre']
             }
           ]
         }
@@ -441,7 +441,7 @@ const obtenerVentasParaDevolucion = async (req, res) => {
             {
               model: Producto,
               as: 'producto',
-              attributes: ['id', 'nombre', 'codigo']
+              attributes: ['id', 'nombre']
             }
           ]
         }
@@ -449,9 +449,39 @@ const obtenerVentasParaDevolucion = async (req, res) => {
       order: [['fecha', 'DESC']]
     });
 
+    // Para cada venta, calcular las cantidades ya devueltas por producto
+    const { Devolucion } = require('../models');
+    const ventasConDevoluciones = await Promise.all(ventas.map(async (venta) => {
+      const ventaJSON = venta.toJSON();
+      
+      // Obtener todas las devoluciones de esta venta
+      const devoluciones = await Devolucion.findAll({
+        where: { venta_id: venta.id },
+        attributes: ['producto_id', 'cantidad']
+      });
+      
+      // Crear un mapa de cantidades devueltas por producto
+      const cantidadesDevueltas = {};
+      devoluciones.forEach(dev => {
+        if (!cantidadesDevueltas[dev.producto_id]) {
+          cantidadesDevueltas[dev.producto_id] = 0;
+        }
+        cantidadesDevueltas[dev.producto_id] += dev.cantidad;
+      });
+      
+      // Agregar información de devoluciones a cada detalle
+      ventaJSON.detalles = ventaJSON.detalles.map(detalle => ({
+        ...detalle,
+        cantidad_devuelta: cantidadesDevueltas[detalle.producto_id] || 0,
+        cantidad_disponible_devolver: detalle.cantidad - (cantidadesDevueltas[detalle.producto_id] || 0)
+      }));
+      
+      return ventaJSON;
+    }));
+
     res.json({
       success: true,
-      data: { ventas }
+      data: { ventas: ventasConDevoluciones }
     });
 
   } catch (error) {

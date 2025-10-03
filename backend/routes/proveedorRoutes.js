@@ -8,6 +8,7 @@ router.use(auth);
 
 // Rutas de proveedores
 router.get('/', proveedorController.obtenerProveedores);
+router.get('/verificar-nombre', proveedorController.verificarNombreProveedor);
 router.get('/:id', proveedorController.obtenerProveedor);
 router.post('/', proveedorController.crearProveedor);
 router.put('/:id', proveedorController.actualizarProveedor);

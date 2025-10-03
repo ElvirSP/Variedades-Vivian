@@ -11,8 +11,16 @@ const Categorias = () => {
     queryFn: () => api.get('/categorias').then(res => res.data.data.categorias)
   });
 
-  const handleEliminar = async (id) => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar esta categoría?')) {
+  const handleEliminar = async (id, categoria) => {
+    let mensaje = `¿Estás seguro de que quieres eliminar la categoría "${categoria.nombre}"?`;
+    
+    if (categoria.productos_count && categoria.productos_count > 0) {
+      mensaje += `\n\nADVERTENCIA: Esta categoría tiene ${categoria.productos_count} producto(s) asociado(s). Al eliminarla, estos productos quedarán sin categoría.`;
+    }
+    
+    mensaje += '\n\nEsta acción no se puede deshacer.';
+    
+    if (window.confirm(mensaje)) {
       try {
         await api.delete(`/categorias/${id}`);
         toast.success('Categoría eliminada exitosamente');
@@ -85,7 +93,7 @@ const Categorias = () => {
                             <Edit className="h-4 w-4" />
                           </Link>
                           <button
-                            onClick={() => handleEliminar(categoria.id)}
+                            onClick={() => handleEliminar(categoria.id, categoria)}
                             className="action-btn delete"
                             title="Eliminar categoría"
                           >

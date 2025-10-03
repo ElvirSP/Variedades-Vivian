@@ -650,6 +650,26 @@ code {
   text-decoration: none;
 }
 
+/* Tarjetas interactivas */
+.card-interactive {
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+}
+
+.card-interactive:hover {
+  background-color: var(--primary-50) !important;
+  border-color: var(--primary-300) !important;
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-1px);
+}
+
+.card-selected {
+  background-color: var(--primary-100) !important;
+  border-color: var(--primary-600) !important;
+  box-shadow: var(--shadow-md) !important;
+  transform: translateY(-1px);
+}
+
 .action-btn.edit {
   color: #2563eb;
   background-color: transparent;

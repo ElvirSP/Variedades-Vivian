@@ -113,7 +113,40 @@ const ProveedorForm = () => {
                 <input
                   type="text"
                   className={`form-input ${errors.nombre ? 'error' : ''}`}
-                  {...register('nombre', { required: 'El nombre es requerido' })}
+                  {...register('nombre', { 
+                    required: 'El nombre es requerido',
+                    minLength: {
+                      value: 2,
+                      message: 'El nombre debe tener al menos 2 caracteres'
+                    },
+                    maxLength: {
+                      value: 100,
+                      message: 'El nombre no puede exceder 100 caracteres'
+                    },
+                    pattern: {
+                      value: /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s\d\-&.()]+$/,
+                      message: 'El nombre contiene caracteres no válidos'
+                    },
+                    validate: async (value) => {
+                      if (isEditing && proveedor && proveedor.nombre === value) {
+                        return true; // No validar si es el mismo nombre
+                      }
+                      
+                      try {
+                        const url = isEditing && proveedor 
+                          ? `/proveedores/verificar-nombre?nombre=${encodeURIComponent(value)}&id=${proveedor.id}`
+                          : `/proveedores/verificar-nombre?nombre=${encodeURIComponent(value)}`;
+                        const response = await api.get(url);
+                        if (response.data.data.exists) {
+                          return 'Ya existe un proveedor con este nombre';
+                        }
+                      } catch (error) {
+                        // Si hay error en la verificación, permitir continuar
+                        console.warn('Error verificando nombre duplicado:', error);
+                      }
+                      return true;
+                    }
+                  })}
                 />
                 {errors.nombre && (
                   <p className="form-error">{errors.nombre.message}</p>
@@ -121,7 +154,7 @@ const ProveedorForm = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Contacto</label>
+                <label className="form-label">Contacto (persona a la que se contacta)</label>
                 <input
                   type="text"
                   className="form-input"
@@ -133,9 +166,44 @@ const ProveedorForm = () => {
                 <label className="form-label">Teléfono</label>
                 <input
                   type="tel"
-                  className="form-input"
-                  {...register('telefono')}
+                  className={`form-input ${errors.telefono ? 'error' : ''}`}
+                  placeholder="Ej: 5123-4567"
+                  {...register('telefono', {
+                    pattern: {
+                      value: /^(\+502[\s\-]?)?[2-9][0-9]{3}[\s\-]?[0-9]{4}$/,
+                      message: 'Formato de teléfono guatemalteco inválido. Use: 5123-4567 o +502 5123-4567'
+                    },
+                    onChange: (e) => {
+                      // Limpiar y formatear el teléfono
+                      let value = e.target.value.replace(/[^0-9+]/g, '');
+                      
+                      // Si empieza con +502, mantenerlo
+                      if (value.startsWith('+502')) {
+                        value = '+502 ' + value.slice(4).replace(/(\d{4})(\d{4})/, '$1-$2');
+                      } else if (value.startsWith('502')) {
+                        value = '+502 ' + value.slice(3).replace(/(\d{4})(\d{4})/, '$1-$2');
+                      } else if (value.length >= 1 && value.length <= 8) {
+                        // Agregar +502 automáticamente cuando empiece a escribir
+                        if (value.length >= 4) {
+                          value = '+502 ' + value.replace(/(\d{4})(\d{0,4})/, '$1' + (value.length > 4 ? '-$2' : ''));
+                        } else {
+                          value = '+502 ' + value;
+                        }
+                      }
+                      
+                      e.target.value = value;
+                    },
+                    onFocus: (e) => {
+                      // Si el campo está vacío, agregar +502 al hacer focus
+                      if (!e.target.value) {
+                        e.target.value = '+502 ';
+                      }
+                    }
+                  })}
                 />
+                {errors.telefono && (
+                  <p className="form-error">{errors.telefono.message}</p>
+                )}
               </div>
 
               <div className="form-group">
