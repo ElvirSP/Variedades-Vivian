@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Plus, Calendar } from 'lucide-react';
@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const Devoluciones = () => {
+  
   const { data, isLoading } = useQuery({
     queryKey: ['devoluciones'],
     queryFn: () => api.get('/devoluciones').then(res => res.data.data)
@@ -29,11 +30,12 @@ const Devoluciones = () => {
       case 'cambio':
         return 'bg-blue-100 text-blue-800';
       case 'otro':
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
+
 
   return (
     <div>
@@ -71,37 +73,37 @@ const Devoluciones = () => {
                 <tbody>
                   {data.devoluciones.map((devolucion) => (
                     <tr key={devolucion.id}>
-                      <td className="font-mono text-sm font-medium text-gray-900">
+                      <td className="font-medium text-gray-900">
                         #{devolucion.id}
                       </td>
-                      <td className="font-mono text-sm text-gray-600">
-                        Venta #{devolucion.venta?.id}
+                      <td>
+                        <Link
+                          to={`/ventas/${devolucion.venta_id}`}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          Venta #{devolucion.venta_id}
+                        </Link>
                       </td>
                       <td>
                         <div>
                           <div className="font-medium text-gray-900">
-                            {devolucion.producto?.nombre}
+                            {devolucion.producto?.nombre || 'Producto eliminado'}
                           </div>
                         </div>
                       </td>
-                      <td className="text-sm text-gray-900">
+                      <td className="text-gray-900">
                         {devolucion.cantidad}
                       </td>
                       <td>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getMotivoColor(devolucion.motivo)}`}>
-                          {devolucion.motivo.replace('_', ' ')}
+                          {devolucion.motivo?.replace('_', ' ').toUpperCase() || 'N/A'}
                         </span>
                       </td>
-                      <td className="text-sm font-semibold text-gray-900">
-                        Q{parseFloat(devolucion.monto_devolucion).toLocaleString()}
+                      <td className="text-gray-900">
+                        Q{devolucion.monto_devolucion?.toLocaleString() || '0'}
                       </td>
-                      <td>
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 text-gray-400 mr-1" />
-                          <span className="text-sm text-gray-900">
-                            {format(new Date(devolucion.fecha_devolucion), 'dd/MM/yyyy', { locale: es })}
-                          </span>
-                        </div>
+                      <td className="text-gray-500">
+                        {format(new Date(devolucion.fecha_devolucion), 'dd/MM/yyyy', { locale: es })}
                       </td>
                     </tr>
                   ))}
@@ -130,6 +132,7 @@ const Devoluciones = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

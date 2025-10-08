@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { api } from '../services/api';
+import { api, clearAuthData } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -29,9 +29,14 @@ export const AuthProvider = ({ children }) => {
             delete api.defaults.headers.common['Authorization'];
           }
         })
-        .catch(() => {
-          localStorage.removeItem('token');
-          delete api.defaults.headers.common['Authorization'];
+        .catch((error) => {
+          // Limpiar datos de autenticación
+          clearAuthData();
+          
+          // Si es un error de token expirado, no mostrar error en consola
+          if (error.response?.data?.code !== 'TOKEN_EXPIRED') {
+            console.error('Error al verificar token:', error);
+          }
         })
         .finally(() => {
           setLoading(false);
@@ -65,8 +70,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    delete api.defaults.headers.common['Authorization'];
+    clearAuthData();
     setUser(null);
   };
 

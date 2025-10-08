@@ -158,6 +158,55 @@ const actualizarPerfil = async (req, res) => {
   }
 };
 
+// Renovar token
+const renovarToken = async (req, res) => {
+  try {
+    const usuario = await Usuario.findByPk(req.usuario.id, {
+      attributes: { exclude: ['password'] }
+    });
+
+    if (!usuario) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    if (!usuario.activo) {
+      return res.status(401).json({
+        success: false,
+        message: 'Usuario desactivado'
+      });
+    }
+
+    // Generar nuevo token
+    const token = generarToken(usuario);
+
+    res.json({
+      success: true,
+      message: 'Token renovado exitosamente',
+      data: {
+        token,
+        usuario: {
+          id: usuario.id,
+          nombre: usuario.nombre,
+          email: usuario.email,
+          rol: usuario.rol,
+          telefono: usuario.telefono,
+          ultimo_acceso: usuario.ultimo_acceso
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error al renovar token:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error interno del servidor'
+    });
+  }
+};
+
 // Cambiar contraseña
 const cambiarPassword = async (req, res) => {
   try {
@@ -219,5 +268,6 @@ module.exports = {
   login,
   obtenerPerfil,
   actualizarPerfil,
-  cambiarPassword
+  cambiarPassword,
+  renovarToken
 };

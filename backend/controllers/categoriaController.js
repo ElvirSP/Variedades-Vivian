@@ -132,7 +132,7 @@ const actualizarCategoria = async (req, res) => {
     if (nombre && nombre !== categoria.nombre) {
       const categoriaExistente = await Categoria.findOne({ 
         where: { 
-          nombre: { [Op.iLike]: nombre },
+          nombre: { [Op.like]: nombre },
           id: { [Op.ne]: id }
         } 
       });

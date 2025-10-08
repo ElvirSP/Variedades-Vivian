@@ -878,6 +878,154 @@ const recalcularTotalesVentas = async (req, res) => {
   }
 };
 
+// Generar reporte consolidado (ventas - devoluciones)
+const generarReporteConsolidado = async (req, res) => {
+  try {
+    const { fecha_desde, fecha_hasta, formato = 'pdf' } = req.query;
+    
+    // Construir filtros de fecha
+    const filtrosVentas = {};
+    const filtrosDevoluciones = {};
+    
+    if (fecha_desde && fecha_hasta) {
+      // Ajustar fechas para incluir todo el día
+      const fechaDesdeAjustada = new Date(fecha_desde);
+      fechaDesdeAjustada.setHours(0, 0, 0, 0);
+      
+      // Extender la fecha hasta al día siguiente para capturar registros guardados en UTC
+      const fechaHastaAjustada = new Date(fecha_hasta);
+      fechaHastaAjustada.setDate(fechaHastaAjustada.getDate() + 1);
+      fechaHastaAjustada.setHours(23, 59, 59, 999);
+      
+      filtrosVentas.fecha = {
+        [Op.between]: [fechaDesdeAjustada, fechaHastaAjustada]
+      };
+      
+      filtrosDevoluciones.fecha_devolucion = {
+        [Op.between]: [fechaDesdeAjustada, fechaHastaAjustada]
+      };
+    } else if (fecha_desde) {
+      const fechaDesdeAjustada = new Date(fecha_desde);
+      fechaDesdeAjustada.setHours(0, 0, 0, 0);
+      
+      filtrosVentas.fecha = {
+        [Op.gte]: fechaDesdeAjustada
+      };
+      filtrosDevoluciones.fecha_devolucion = {
+        [Op.gte]: fechaDesdeAjustada
+      };
+    } else if (fecha_hasta) {
+      // Extender la fecha hasta al día siguiente para capturar registros guardados en UTC
+      const fechaHastaAjustada = new Date(fecha_hasta);
+      fechaHastaAjustada.setDate(fechaHastaAjustada.getDate() + 1);
+      fechaHastaAjustada.setHours(23, 59, 59, 999);
+      
+      filtrosVentas.fecha = {
+        [Op.lte]: fechaHastaAjustada
+      };
+      filtrosDevoluciones.fecha_devolucion = {
+        [Op.lte]: fechaHastaAjustada
+      };
+    }
+
+    // Obtener ventas con detalles
+    const ventas = await Venta.findAll({
+      where: filtrosVentas,
+      include: [
+        {
+          model: DetalleVenta,
+          as: 'detalles',
+          include: [
+            {
+              model: Producto,
+              as: 'producto',
+              include: [
+                {
+                  model: Categoria,
+                  as: 'categoria'
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      order: [['fecha', 'DESC']]
+    });
+
+    // Obtener devoluciones con detalles
+    const devoluciones = await Devolucion.findAll({
+      where: filtrosDevoluciones,
+      include: [
+        {
+          model: Producto,
+          as: 'producto',
+          include: [
+            {
+              model: Categoria,
+              as: 'categoria'
+            }
+          ]
+        }
+      ],
+      order: [['fecha_devolucion', 'DESC']]
+    });
+
+    // Calcular totales
+    const totalVentas = ventas.reduce((sum, venta) => sum + parseFloat(venta.total), 0);
+    const totalDevoluciones = devoluciones.reduce((sum, dev) => sum + parseFloat(dev.monto_devolucion), 0);
+    const totalNeto = totalVentas - totalDevoluciones;
+
+    // Preparar datos del reporte
+    const reporte = {
+      resumen: {
+        totalVentas: ventas.length,
+        totalDevoluciones: devoluciones.length,
+        montoVentas: totalVentas,
+        montoDevoluciones: totalDevoluciones,
+        totalNeto: totalNeto,
+        ventasCompletadas: ventas.filter(v => v.estado === 'completada').length,
+        ventasPendientes: ventas.filter(v => v.estado === 'pendiente').length,
+        devolucionesProcesadas: devoluciones.filter(d => d.estado === 'procesada').length,
+        devolucionesPendientes: devoluciones.filter(d => d.estado === 'pendiente').length
+      },
+      ventas: ventas.map(venta => ({
+        id: venta.id,
+        fecha: venta.fecha,
+        total: venta.total,
+        observaciones: venta.observaciones || 'N/A',
+        productos: venta.detalles.map(detalle => ({
+          nombre: detalle.producto?.nombre || 'N/A',
+          categoria: detalle.producto?.categoria?.nombre || 'N/A',
+          cantidad: detalle.cantidad,
+          precio: detalle.precio_unitario
+        }))
+      })),
+      devoluciones: devoluciones.map(devolucion => ({
+        id: devolucion.id,
+        fecha: devolucion.fecha_devolucion,
+        producto: devolucion.producto?.nombre || 'N/A',
+        categoria: devolucion.producto?.categoria?.nombre || 'N/A',
+        cantidad: devolucion.cantidad,
+        monto: devolucion.monto_devolucion,
+        motivo: devolucion.motivo || 'N/A',
+        descripcion: devolucion.descripcion || 'N/A'
+      }))
+    };
+
+    res.json({
+      success: true,
+      data: reporte
+    });
+
+  } catch (error) {
+    console.error('Error al generar reporte consolidado:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al generar el reporte consolidado'
+    });
+  }
+};
+
 module.exports = {
   obtenerResumen,
   obtenerEstadisticas,
@@ -888,5 +1036,6 @@ module.exports = {
   obtenerProductosMasVendidos,
   obtenerVentasMeta,
   obtenerDevolucionesMensuales,
-  recalcularTotalesVentas
+  recalcularTotalesVentas,
+  generarReporteConsolidado
 };

@@ -8,6 +8,7 @@ router.use(auth);
 
 // Rutas de devoluciones
 router.get('/', devolucionController.obtenerDevoluciones);
+router.get('/reporte', devolucionController.generarReporteDevoluciones);
 router.get('/:id', devolucionController.obtenerDevolucion);
 router.post('/', devolucionController.crearDevolucion);
 router.patch('/:id/procesar', devolucionController.procesarDevolucion);

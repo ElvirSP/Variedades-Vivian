@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Package, 
@@ -9,13 +9,16 @@ import {
   TrendingDown,
   Target,
   TrendingUp,
-  Calculator
+  Calculator,
+  FileText
 } from 'lucide-react';
 import api from '../services/api';
 import Graficas from '../components/Graficas';
+import ReporteConsolidadoModal from '../components/ReporteConsolidadoModal';
 
 const Dashboard = () => {
   const queryClient = useQueryClient();
+  const [mostrarReporte, setMostrarReporte] = useState(false);
   
   const { data: resumen, isLoading, error } = useQuery({
     queryKey: ['dashboard-resumen'],
@@ -102,21 +105,67 @@ const Dashboard = () => {
       padding: '2rem 0'
     }}>
       <div style={{ marginBottom: '2rem', padding: '0 1rem' }}>
-        <h1 style={{ 
-          fontSize: '2rem', 
-          fontWeight: 'bold', 
-          color: 'var(--secondary-800)',
-          marginBottom: '0.5rem'
-        }}>
-          Dashboard
-        </h1>
-        <p style={{ 
-          fontSize: '0.875rem', 
-          color: 'var(--secondary-600)',
-          margin: 0
-        }}>
-          Resumen del día {new Date().toLocaleDateString('es-ES')}
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div>
+            <h1 style={{ 
+              fontSize: '2rem', 
+              fontWeight: 'bold', 
+              color: 'var(--secondary-800)',
+              marginBottom: '0.5rem',
+              margin: 0
+            }}>
+              Dashboard
+            </h1>
+            <p style={{ 
+              fontSize: '0.875rem', 
+              color: 'var(--secondary-600)',
+              margin: 0
+            }}>
+              Resumen del día {new Date().toLocaleDateString('es-ES')}
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setMostrarReporte(true);
+              // Scroll automático al modal después de un breve delay
+              setTimeout(() => {
+                const modalElement = document.getElementById('reporte-consolidado-modal');
+                if (modalElement) {
+                  modalElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                  });
+                }
+              }, 100);
+            }}
+            style={{
+              background: 'linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.75rem 1.5rem',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              boxShadow: 'var(--shadow-md)',
+              transition: 'all 0.2s ease-in-out'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.transform = 'translateY(-1px)';
+              e.target.style.boxShadow = 'var(--shadow-lg)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = 'var(--shadow-md)';
+            }}
+          >
+            <FileText style={{ width: '1rem', height: '1rem' }} />
+            Reporte de Ventas Netas
+          </button>
+        </div>
       </div>
 
       {/* Estadísticas principales */}
@@ -196,6 +245,12 @@ const Dashboard = () => {
         
         <Graficas />
       </div>
+
+      {/* Modal de Reporte de Ventas Netas */}
+      <ReporteConsolidadoModal
+        isOpen={mostrarReporte}
+        onClose={() => setMostrarReporte(false)}
+      />
 
     </div>
   );

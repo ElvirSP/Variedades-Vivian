@@ -406,11 +406,116 @@ const eliminarDevolucion = async (req, res) => {
   }
 };
 
+// Generar reporte de devoluciones
+const generarReporteDevoluciones = async (req, res) => {
+  try {
+    const { fecha_desde, fecha_hasta, formato = 'pdf' } = req.query;
+    
+    // Construir filtros de fecha
+    const filtros = {};
+    if (fecha_desde && fecha_hasta) {
+      // Ajustar fecha_hasta para incluir todo el día (hasta 23:59:59)
+      const fechaHastaAjustada = new Date(fecha_hasta);
+      fechaHastaAjustada.setHours(23, 59, 59, 999);
+      
+      filtros.fecha_devolucion = {
+        [Op.between]: [new Date(fecha_desde), fechaHastaAjustada]
+      };
+    } else if (fecha_desde) {
+      filtros.fecha_devolucion = {
+        [Op.gte]: new Date(fecha_desde)
+      };
+    } else if (fecha_hasta) {
+      // Ajustar fecha_hasta para incluir todo el día
+      const fechaHastaAjustada = new Date(fecha_hasta);
+      fechaHastaAjustada.setHours(23, 59, 59, 999);
+      
+      filtros.fecha_devolucion = {
+        [Op.lte]: fechaHastaAjustada
+      };
+    }
+
+    // Obtener devoluciones con detalles
+    const devoluciones = await Devolucion.findAll({
+      where: filtros,
+      include: [
+        {
+          model: Venta,
+          as: 'venta',
+          include: [
+            {
+              model: Usuario,
+              as: 'usuario',
+              attributes: ['nombre', 'email']
+            }
+          ]
+        },
+        {
+          model: Producto,
+          as: 'producto',
+          attributes: ['nombre', 'precio_venta']
+        },
+        {
+          model: Usuario,
+          as: 'usuario',
+          attributes: ['nombre', 'email']
+        }
+      ],
+      order: [['fecha_devolucion', 'DESC']]
+    });
+
+    // Calcular estadísticas
+    const totalDevoluciones = devoluciones.length;
+    const totalMonto = devoluciones.reduce((sum, dev) => sum + parseFloat(dev.monto_devolucion || 0), 0);
+    const devolucionesProcesadas = devoluciones.filter(d => d.estado === 'procesada').length;
+    const devolucionesPendientes = devoluciones.filter(d => d.estado === 'pendiente').length;
+
+    const reporte = {
+      periodo: {
+        desde: fecha_desde || 'Inicio',
+        hasta: fecha_hasta || 'Actual'
+      },
+      resumen: {
+        totalDevoluciones,
+        totalMonto,
+        devolucionesProcesadas,
+        devolucionesPendientes
+      },
+      devoluciones: devoluciones.map(devolucion => ({
+        id: devolucion.id,
+        fecha: devolucion.fecha_devolucion,
+        motivo: devolucion.motivo,
+        descripcion: devolucion.descripcion,
+        cantidad: devolucion.cantidad,
+        monto: devolucion.monto_devolucion,
+        estado: devolucion.estado,
+        producto: devolucion.producto?.nombre,
+        venta_id: devolucion.venta_id,
+        vendedor_original: devolucion.venta?.usuario?.nombre,
+        procesado_por: devolucion.usuario?.nombre
+      }))
+    };
+
+    res.json({
+      success: true,
+      data: reporte
+    });
+
+  } catch (error) {
+    console.error('Error al generar reporte de devoluciones:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al generar el reporte de devoluciones'
+    });
+  }
+};
+
 module.exports = {
   obtenerDevoluciones,
   obtenerDevolucion,
   crearDevolucion,
   procesarDevolucion,
   actualizarEstadoDevolucion,
-  eliminarDevolucion
+  eliminarDevolucion,
+  generarReporteDevoluciones
 };

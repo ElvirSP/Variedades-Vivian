@@ -493,6 +493,104 @@ const obtenerVentasParaDevolucion = async (req, res) => {
   }
 };
 
+// Generar reporte de ventas
+const generarReporteVentas = async (req, res) => {
+  try {
+    const { fecha_desde, fecha_hasta, formato = 'pdf' } = req.query;
+    
+    // Construir filtros de fecha
+    const filtros = {};
+    if (fecha_desde && fecha_hasta) {
+      // Ajustar fecha_hasta para incluir todo el día (hasta 23:59:59)
+      const fechaHastaAjustada = new Date(fecha_hasta);
+      fechaHastaAjustada.setHours(23, 59, 59, 999);
+      
+      filtros.fecha = {
+        [Op.between]: [new Date(fecha_desde), fechaHastaAjustada]
+      };
+    } else if (fecha_desde) {
+      filtros.fecha = {
+        [Op.gte]: new Date(fecha_desde)
+      };
+    } else if (fecha_hasta) {
+      // Ajustar fecha_hasta para incluir todo el día
+      const fechaHastaAjustada = new Date(fecha_hasta);
+      fechaHastaAjustada.setHours(23, 59, 59, 999);
+      
+      filtros.fecha = {
+        [Op.lte]: fechaHastaAjustada
+      };
+    }
+
+    // Obtener ventas con detalles
+    const ventas = await Venta.findAll({
+      where: filtros,
+      include: [
+        {
+          model: DetalleVenta,
+          as: 'detalles',
+          include: [{
+            model: Producto,
+            as: 'producto'
+          }]
+        },
+        {
+          model: Usuario,
+          as: 'usuario',
+          attributes: ['nombre', 'email']
+        }
+      ],
+      order: [['fecha', 'DESC']]
+    });
+
+    // Calcular estadísticas
+    const totalVentas = ventas.length;
+    const totalIngresos = ventas.reduce((sum, venta) => sum + parseFloat(venta.total || 0), 0);
+    const ventasCompletadas = ventas.filter(v => v.estado === 'completada').length;
+    const ventasPendientes = ventas.filter(v => v.estado === 'pendiente').length;
+
+    const reporte = {
+      periodo: {
+        desde: fecha_desde || 'Inicio',
+        hasta: fecha_hasta || 'Actual'
+      },
+      resumen: {
+        totalVentas,
+        totalIngresos,
+        ventasCompletadas,
+        ventasPendientes
+      },
+      ventas: ventas.map(venta => ({
+        id: venta.id,
+        fecha: venta.fecha,
+        subtotal: venta.subtotal,
+        total: venta.total,
+        estado: venta.estado,
+        observaciones: venta.observaciones,
+        vendedor: venta.usuario?.nombre,
+        productos: venta.detalles?.map(detalle => ({
+          nombre: detalle.producto?.nombre,
+          cantidad: detalle.cantidad,
+          precio: detalle.precio_unitario,
+          subtotal: detalle.subtotal
+        }))
+      }))
+    };
+
+    res.json({
+      success: true,
+      data: reporte
+    });
+
+  } catch (error) {
+    console.error('Error al generar reporte de ventas:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al generar el reporte de ventas'
+    });
+  }
+};
+
 module.exports = {
   obtenerVentas,
   obtenerVenta,
@@ -500,5 +598,6 @@ module.exports = {
   actualizarEstadoVenta,
   eliminarVenta,
   obtenerEstadisticasVentas,
-  obtenerVentasParaDevolucion
+  obtenerVentasParaDevolucion,
+  generarReporteVentas
 };

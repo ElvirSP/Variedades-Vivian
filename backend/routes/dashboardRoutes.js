@@ -25,4 +25,7 @@ router.get('/devoluciones-mensuales', dashboardController.obtenerDevolucionesMen
 // Ruta para recalcular totales
 router.post('/recalcular-totales', dashboardController.recalcularTotalesVentas);
 
+// Ruta para reporte consolidado
+router.get('/reporte-consolidado', dashboardController.generarReporteConsolidado);
+
 module.exports = router;

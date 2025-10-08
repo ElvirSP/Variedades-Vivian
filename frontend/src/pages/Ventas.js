@@ -204,6 +204,7 @@ const Ventas = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };

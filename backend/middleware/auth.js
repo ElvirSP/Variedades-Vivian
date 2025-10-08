@@ -41,9 +41,28 @@ const authMiddleware = async (req, res, next) => {
     next();
   } catch (error) {
     console.error('Error en autenticación:', error);
+    
+    // Manejar específicamente tokens expirados
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Token expirado. Por favor, inicia sesión nuevamente.',
+        code: 'TOKEN_EXPIRED'
+      });
+    }
+    
+    // Manejar tokens inválidos
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ 
+        success: false, 
+        message: 'Token inválido.',
+        code: 'TOKEN_INVALID'
+      });
+    }
+    
     res.status(401).json({ 
       success: false, 
-      message: 'Token inválido.' 
+      message: 'Error de autenticación.' 
     });
   }
 };

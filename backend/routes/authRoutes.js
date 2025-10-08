@@ -10,5 +10,6 @@ router.post('/login', authController.login);
 router.get('/perfil', auth, authController.obtenerPerfil);
 router.put('/perfil', auth, authController.actualizarPerfil);
 router.put('/cambiar-password', auth, authController.cambiarPassword);
+router.post('/renovar-token', auth, authController.renovarToken);
 
 module.exports = router;
