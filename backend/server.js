@@ -22,6 +22,9 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configurar trust proxy para Railway
+app.set('trust proxy', 1);
+
 // Middlewares de seguridad
 app.use(helmet());
 app.use(cors());

@@ -65,21 +65,6 @@ const obtenerResumen = async (req, res) => {
       where: { activo: true }
     });
 
-    // Ventas por método de pago (hoy)
-    const ventasPorMetodo = await Venta.findAll({
-      where: {
-        fecha: {
-          [Op.between]: [inicioDia, finDia]
-        },
-        estado: 'completada'
-      },
-      attributes: [
-        'metodo_pago',
-        [sequelize.fn('COUNT', sequelize.col('id')), 'cantidad'],
-        [sequelize.fn('SUM', sequelize.col('total')), 'total']
-      ],
-      group: ['metodo_pago']
-    });
 
     res.json({
       success: true,
@@ -97,8 +82,7 @@ const obtenerResumen = async (req, res) => {
             totalProductos,
             totalCategorias,
             totalProveedores
-          },
-          ventasPorMetodo
+          }
         }
       }
     });
