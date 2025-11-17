@@ -114,17 +114,6 @@ const Login = () => {
             </div>
           </div>
 
-          <div className="text-center mb-4">
-            <button
-              type="button"
-              onClick={() => toast.info('Por favor, contacta al administrador para restablecer tu contraseña')}
-              className="text-sm text-primary-600 hover:text-primary-700 transition-colors bg-transparent border-0"
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}
-            >
-              ¿Olvidaste tu contraseña? (Falta implementar)
-            </button>
-          </div>
-
           <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
             <button
               type="submit"
